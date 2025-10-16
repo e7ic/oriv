@@ -3198,6 +3198,7 @@ dependencies = [
 name = "oriv"
 version = "0.1.0"
 dependencies = [
+ "i-slint-backend-winit",
  "slint",
  "slint-build",
  "winres",
