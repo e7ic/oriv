@@ -1,4 +1,5 @@
-import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
+ import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
+import { TitleBar } from "components/title-bar.slint";
 
 export component AppWindow inherits Window {
     icon: @image-url("../assets/app-icon.png");
@@ -27,138 +28,37 @@ export component AppWindow inherits Window {
         height: 100%;
         background: white;
         border-radius: root.is-maximized ? 0px : 16px;
+        clip: true;
 
         VerticalBox {
             padding: 0px;
             spacing: 0px;
+            width: 100%;
 
             // 自定义标题栏
-            title-bar := Rectangle {
-                height: 40px;
-                background: #f5f5f5;
-                border-radius: root.is-maximized ? 0px : 16px;
-                clip: true;
+            TitleBar {
+                title: root.title;
+                is-maximized <=> root.is-maximized;
 
-                HorizontalBox {
-                    padding-left: 16px;
-                    padding-right: 8px;
-                    spacing: 0px;
+                minimize-clicked => {
+                    root.minimize-window();
+                }
 
-                    // 标题文本区域（可拖动）
-                    drag-area := Rectangle {
-                        horizontal-stretch: 1;
+                maximize-clicked => {
+                    root.is-maximized = root.maximize-window();
+                }
 
-                        drag-touch := TouchArea {
-                            width: 100%;
-                            height: 100%;
-                            mouse-cursor: move;
+                close-clicked => {
+                    root.close-window();
+                }
 
-                            pointer-event(event) => {
-                                if (event.button == PointerEventButton.left && event.kind == PointerEventKind.down) {
-                                    // 调用后端开始拖动窗口
-                                    root.start-drag-window();
-                                }
-                            }
-
-                            // 双击标题栏切换最大化
-                            double-clicked => {
-                                root.is-maximized = root.maximize-window();
-                            }
-                        }
-
-                        Text {
-                            text: "Oriv";
-                            vertical-alignment: center;
-                            font-size: 14px;
-                            color: #333;
-                        }
-                    }
-
-                    // 窗口控制按钮
-                    HorizontalBox {
-                        spacing: 4px;
-
-                        // 最小化按钮
-                        Rectangle {
-                            width: 36px;
-                            height: 28px;
-                            border-radius: 6px;
-                            background: min-touch.has-hover ? #e0e0e0 : transparent;
-
-                            TouchArea {
-                                min-touch := TouchArea {
-                                    clicked => {
-                                        root.minimize-window();
-                                    }
-                                }
-                            }
-
-                            Text {
-                                text: "−";
-                                font-size: 18px;
-                                color: #666;
-                                vertical-alignment: center;
-                                horizontal-alignment: center;
-                            }
-                        }
-
-                        // 最大化按钮
-                        Rectangle {
-                            width: 36px;
-                            height: 28px;
-                            border-radius: 6px;
-                            background: max-touch.has-hover ? #e0e0e0 : transparent;
-
-                            TouchArea {
-                                max-touch := TouchArea {
-                                    clicked => {
-                                        root.is-maximized = root.maximize-window();
-                                    }
-                                }
-                            }
-
-                            Rectangle {
-                                width: 12px;
-                                height: 12px;
-                                x: (parent.width - self.width) / 2;
-                                y: (parent.height - self.height) / 2;
-                                border-width: 1.5px;
-                                border-color: #666;
-                                border-radius: 2px;
-                            }
-                        }
-
-                        // 关闭按钮
-                        Rectangle {
-                            width: 36px;
-                            height: 28px;
-                            border-radius: 6px;
-                            background: close-touch.has-hover ? #e81123 : transparent;
-
-                            TouchArea {
-                                close-touch := TouchArea {
-                                    clicked => {
-                                        root.close-window();
-                                    }
-                                }
-                            }
-
-                            Text {
-                                text: "×";
-                                font-size: 20px;
-                                color: close-touch.has-hover ? white : #666;
-                                vertical-alignment: center;
-                                horizontal-alignment: center;
-                            }
-                        }
-                    }
+                start-drag => {
+                    root.start-drag-window();
                 }
             }
 
             // 主内容区域
             Rectangle {
-                vertical-stretch: 1;
-                // 这里放置应用的主要内容
             }
         }
     }

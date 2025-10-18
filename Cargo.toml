@@ -2,11 +2,25 @@
 name = "oriv"
 version = "0.1.0"
 edition = "2024"
+authors = ["Your Name"]
+description = "A Slint-based GUI application"
 
 [dependencies]
 slint = "1.13.1"
 i-slint-backend-winit = "1.13.1"
 
+[package.metadata.bundle]
+name = "Oriv"
+identifier = "com.oriv.app"
+icon = ["assets/app-icon.png"]
+version = "0.1.0"
+copyright = "Copyright (c) 2025"
+category = "Utility"
+short_description = "A Slint-based GUI application"
+long_description = "A cross-platform GUI application built with Slint framework"
+
 [build-dependencies]
 slint-build = "1.13.1"
+
+[target.'cfg(windows)'.build-dependencies]
 winres = "0.1"

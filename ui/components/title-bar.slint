@@ -1,0 +1,148 @@
+import { VerticalBox, HorizontalBox } from "std-widgets.slint";
+
+export component TitleBar inherits Rectangle {
+    width: 100%;
+    height: 40px;
+    background: #f5f5f5;
+    clip: true;
+
+    // 对外暴露的属性
+    in-out property <string> title: "Oriv";
+    in-out property <bool> is-maximized: false;
+
+    // 对外暴露的回调
+    callback minimize-clicked();
+    callback maximize-clicked();
+    callback close-clicked();
+    callback start-drag();
+
+    // 标题文本区域（可拖动）
+    drag-area := Rectangle {
+        width: 100%;
+        height: 100%;
+        horizontal-stretch: 1;
+
+        drag-touch := TouchArea {
+            width: 100%;
+            height: 100%;
+
+            pointer-event(event) => {
+                if (event.button == PointerEventButton.left && event.kind == PointerEventKind.down) {
+                    root.start-drag();
+                }
+            }
+
+            // 双击标题栏切换最大化
+            double-clicked => {
+                root.maximize-clicked();
+            }
+        }
+
+        Text {
+            x: 16px;
+            text: root.title;
+            vertical-alignment: center;
+            horizontal-alignment: center;
+            font-size: 14px;
+            color: #333;
+        }
+    }
+
+    VerticalBox {
+        alignment: LayoutAlignment.center;
+        width: 108px;
+        height: 40px;
+        x: parent.width - self.width - 8px;
+        y: 0;
+
+        HorizontalLayout {
+            width: 100%;
+            height: 24px;
+            alignment: LayoutAlignment.space-between;
+
+            // 最小化按钮
+            Rectangle {
+                width: 24px;
+                height: 24px;
+                border-radius: 6px;
+                background: min-touch.has-hover ? #e0e0e0 : transparent;
+
+                TouchArea {
+                    min-touch := TouchArea {
+                        clicked => {
+                            root.minimize-clicked();
+                        }
+                    }
+                }
+
+                Image {
+                    width: 16px;
+                    height: 16px;
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                    source: @image-url("../../assets/icons/minimize.svg");
+                    colorize: #666;
+                }
+            }
+
+            // 最大化按钮
+            Rectangle {
+                width: 24px;
+                height: 24px;
+                border-radius: 6px;
+                background: max-touch.has-hover ? #e0e0e0 : transparent;
+
+                TouchArea {
+                    max-touch := TouchArea {
+                        clicked => {
+                            root.maximize-clicked();
+                        }
+                    }
+                }
+
+                if !root.is-maximized: Image {
+                    width: 16px;
+                    height: 16px;
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                    source: @image-url("../../assets/icons/maximize.svg");
+                    colorize: #666;
+                }
+
+                if root.is-maximized: Image {
+                    width: 16px;
+                    height: 16px;
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                    source: @image-url("../../assets/icons/restore.svg");
+                    colorize: #666;
+                }
+            }
+
+            // 关闭按钮
+            Rectangle {
+                width: 24px;
+                height: 24px;
+                border-radius: 6px;
+                background: close-touch.has-hover ? #e81123 : transparent;
+
+                TouchArea {
+                    close-touch := TouchArea {
+                        clicked => {
+                            root.close-clicked();
+                        }
+                    }
+                }
+
+                Image {
+                    width: 16px;
+                    height: 16px;
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                    source: @image-url("../../assets/icons/close.svg");
+                    colorize: close-touch.has-hover ? white : #666;
+                }
+            }
+        }
+    }
+}
