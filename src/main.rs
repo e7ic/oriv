@@ -59,6 +59,16 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     });
 
+    // 切换主题
+    ui.on_toggle_theme({
+        let ui_handle = ui.as_weak();
+        move || {
+            let ui = ui_handle.unwrap();
+            let current_mode = ui.get_dark_mode();
+            ui.set_dark_mode(!current_mode);
+        }
+    });
+
     ui.run()?;
 
     Ok(())

@@ -3,18 +3,27 @@ import { VerticalBox, HorizontalBox } from "std-widgets.slint";
 export component TitleBar inherits Rectangle {
     width: 100%;
     height: 40px;
-    background: #f5f5f5;
     clip: true;
 
     // 对外暴露的属性
-    in-out property <string> title: "Oriv";
+    in-out property <string> title: "ORIV";
+    in-out property <image> logo: @image-url("../../assets/app-icon.png");
     in-out property <bool> is-maximized: false;
+    in-out property <bool> dark-mode: false;
+
+    // 主题颜色属性
+    in-out property <color> titlebar-bg: #f5f5f5;
+    in-out property <color> text-color: #333;
+    in-out property <color> icon-color: #666;
+    in-out property <color> button-hover-bg: #e0e0e0;
 
     // 对外暴露的回调
     callback minimize-clicked();
     callback maximize-clicked();
     callback close-clicked();
     callback start-drag();
+
+    background: titlebar-bg;
 
     // 标题文本区域（可拖动）
     drag-area := Rectangle {
@@ -38,13 +47,23 @@ export component TitleBar inherits Rectangle {
             }
         }
 
+        // Logo图标
+        Image {
+            x: 12px;
+            y: (parent.height - self.height) / 2;
+            width: 24px;
+            height: 24px;
+            source: root.logo;
+        }
+
         Text {
-            x: 16px;
+            x: 44px;
+            y: (parent.height - self.height + 4px) / 2;
             text: root.title;
             vertical-alignment: center;
-            horizontal-alignment: center;
-            font-size: 14px;
-            color: #333;
+            horizontal-alignment: left;
+            font-size: 16px;
+            color: root.text-color;
         }
     }
 
@@ -65,7 +84,7 @@ export component TitleBar inherits Rectangle {
                 width: 24px;
                 height: 24px;
                 border-radius: 6px;
-                background: min-touch.has-hover ? #e0e0e0 : transparent;
+                background: min-touch.has-hover ? root.button-hover-bg : transparent;
 
                 TouchArea {
                     min-touch := TouchArea {
@@ -81,7 +100,7 @@ export component TitleBar inherits Rectangle {
                     x: (parent.width - self.width) / 2;
                     y: (parent.height - self.height) / 2;
                     source: @image-url("../../assets/icons/minimize.svg");
-                    colorize: #666;
+                    colorize: root.icon-color;
                 }
             }
 
@@ -90,7 +109,7 @@ export component TitleBar inherits Rectangle {
                 width: 24px;
                 height: 24px;
                 border-radius: 6px;
-                background: max-touch.has-hover ? #e0e0e0 : transparent;
+                background: max-touch.has-hover ? root.button-hover-bg : transparent;
 
                 TouchArea {
                     max-touch := TouchArea {
@@ -106,7 +125,7 @@ export component TitleBar inherits Rectangle {
                     x: (parent.width - self.width) / 2;
                     y: (parent.height - self.height) / 2;
                     source: @image-url("../../assets/icons/maximize.svg");
-                    colorize: #666;
+                    colorize: root.icon-color;
                 }
 
                 if root.is-maximized: Image {
@@ -115,7 +134,7 @@ export component TitleBar inherits Rectangle {
                     x: (parent.width - self.width) / 2;
                     y: (parent.height - self.height) / 2;
                     source: @image-url("../../assets/icons/restore.svg");
-                    colorize: #666;
+                    colorize: root.icon-color;
                 }
             }
 
@@ -140,7 +159,7 @@ export component TitleBar inherits Rectangle {
                     x: (parent.width - self.width) / 2;
                     y: (parent.height - self.height) / 2;
                     source: @image-url("../../assets/icons/close.svg");
-                    colorize: close-touch.has-hover ? white : #666;
+                    colorize: close-touch.has-hover ? white : root.icon-color;
                 }
             }
         }

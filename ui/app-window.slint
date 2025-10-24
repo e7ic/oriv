@@ -1,15 +1,20 @@
- import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
 import { TitleBar } from "components/title-bar.slint";
+
+// 导入自定义字体
+import "../assets/fonts/Kamerik105-Regular.otf";
+import "../assets/fonts/Kamerik105-Bold.otf";
 
 export component AppWindow inherits Window {
     icon: @image-url("../assets/app-icon.png");
-    title: "Oriv";
+    title: "ORIV";
     preferred-width: 1200px;
     preferred-height: 800px;
     min-width: 800px;
     min-height: 600px;
     no-frame: true;
     background: transparent;
+    default-font-family: "Kamerik 105";
 
     in-out property <int> counter: 42;
     callback request-increase-value();
@@ -23,10 +28,21 @@ export component AppWindow inherits Window {
     // 窗口状态
     in-out property <bool> is-maximized: false;
 
+    // 主题相关
+    in-out property <bool> dark-mode: false;
+    callback toggle-theme();
+
+    // 颜色定义
+    property <color> bg-color: dark-mode ? #1e1e1e : white;
+    property <color> titlebar-bg: dark-mode ? #2d2d2d : #f5f5f5;
+    property <color> text-color: dark-mode ? #e0e0e0 : #333;
+    property <color> icon-color: dark-mode ? #b0b0b0 : #666;
+    property <color> button-hover-bg: dark-mode ? #3e3e3e : #e0e0e0;
+
     Rectangle {
         width: 100%;
         height: 100%;
-        background: white;
+        background: root.bg-color;
         border-radius: root.is-maximized ? 0px : 16px;
         clip: true;
 
@@ -39,6 +55,11 @@ export component AppWindow inherits Window {
             TitleBar {
                 title: root.title;
                 is-maximized <=> root.is-maximized;
+                dark-mode: root.dark-mode;
+                titlebar-bg: root.titlebar-bg;
+                text-color: root.text-color;
+                icon-color: root.icon-color;
+                button-hover-bg: root.button-hover-bg;
 
                 minimize-clicked => {
                     root.minimize-window();
@@ -59,6 +80,31 @@ export component AppWindow inherits Window {
 
             // 主内容区域
             Rectangle {
+                background: root.bg-color;
+
+                // 添加主题切换按钮（示例）
+                Rectangle {
+                    width: 120px;
+                    height: 36px;
+                    x: 20px;
+                    y: 20px;
+                    background: root.button-hover-bg;
+                    border-radius: 8px;
+
+                    TouchArea {
+                        clicked => {
+                            root.toggle-theme();
+                        }
+                    }
+
+                    Text {
+                        text: root.dark-mode ? "浅色模式" : "深色模式";
+                        color: root.text-color;
+                        font-size: 14px;
+                        vertical-alignment: center;
+                        horizontal-alignment: center;
+                    }
+                }
             }
         }
     }
