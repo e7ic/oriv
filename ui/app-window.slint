@@ -12,7 +12,7 @@ export component AppWindow inherits Window {
     preferred-height: 800px;
     min-width: 800px;
     min-height: 600px;
-    no-frame: true;
+    // 注意：no-frame 现在通过 Rust 代码在非 macOS 平台设置
     background: transparent;
     default-font-family: "Kamerik 105";
 
@@ -27,6 +27,9 @@ export component AppWindow inherits Window {
 
     // 窗口状态
     in-out property <bool> is-maximized: false;
+
+    // 平台检测
+    in-out property <bool> is-macos: false;  // 由 Rust 代码设置
 
     // 主题相关
     in-out property <bool> dark-mode: false;
@@ -43,7 +46,8 @@ export component AppWindow inherits Window {
         width: 100%;
         height: 100%;
         background: root.bg-color;
-        border-radius: root.is-maximized ? 0px : 16px;
+        // macOS 使用系统窗口圆角，其他平台在未最大化时使用自定义圆角
+        border-radius: (root.is-macos || root.is-maximized) ? 0px : 16px;
         clip: true;
 
         VerticalBox {
@@ -55,6 +59,7 @@ export component AppWindow inherits Window {
             TitleBar {
                 title: root.title;
                 is-maximized <=> root.is-maximized;
+                is-macos: root.is-macos;  // 传递平台信息
                 dark-mode: root.dark-mode;
                 titlebar-bg: root.titlebar-bg;
                 text-color: root.text-color;

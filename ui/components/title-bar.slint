@@ -9,6 +9,7 @@ export component TitleBar inherits Rectangle {
     in-out property <string> title: "ORIV";
     in-out property <image> logo: @image-url("../../assets/app-icon.png");
     in-out property <bool> is-maximized: false;
+    in-out property <bool> is-macos: false;  // 平台检测
     in-out property <bool> dark-mode: false;
 
     // 主题颜色属性
@@ -48,8 +49,9 @@ export component TitleBar inherits Rectangle {
         }
 
         // Logo图标
+        // 在 macOS 上，左侧留出空间给原生的红黄绿按钮（约 78px）
         Image {
-            x: 12px;
+            x: root.is-macos ? 78px : 12px;
             y: (parent.height - self.height) / 2;
             width: 24px;
             height: 24px;
@@ -57,7 +59,7 @@ export component TitleBar inherits Rectangle {
         }
 
         Text {
-            x: 44px;
+            x: root.is-macos ? 110px : 44px;
             y: (parent.height - self.height + 4px) / 2;
             text: root.title;
             vertical-alignment: center;
@@ -67,7 +69,8 @@ export component TitleBar inherits Rectangle {
         }
     }
 
-    VerticalBox {
+    // 窗口控制按钮（仅在非 macOS 平台显示）
+    if !root.is-macos: VerticalBox {
         alignment: LayoutAlignment.center;
         width: 108px;
         height: 40px;
