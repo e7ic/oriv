@@ -12,7 +12,7 @@ export component AppWindow inherits Window {
     preferred-height: 800px;
     min-width: 800px;
     min-height: 600px;
-    // 注意：no-frame 现在通过 Rust 代码在非 macOS 平台设置
+    no-frame: true;  // 移除系统标题栏和边框
     background: transparent;
     default-font-family: "Kamerik 105";
 

@@ -6,7 +6,29 @@ use i_slint_backend_winit::WinitWindowAccessor;
 
 slint::include_modules!();
 
+/// 设置 Windows DPI 感知以改善字体渲染
+#[cfg(target_os = "windows")]
+fn set_dpi_awareness() {
+    use winapi::um::shellscalingapi::{SetProcessDpiAwareness, PROCESS_PER_MONITOR_DPI_AWARE};
+
+    unsafe {
+        // 设置进程为每监视器 DPI 感知
+        // 这样可以确保在高 DPI 显示器上字体清晰
+        let _ = SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
+    }
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
+    // Windows 平台：设置 DPI 感知
+    #[cfg(target_os = "windows")]
+    set_dpi_awareness();
+
+    // 强制使用 Skia 渲染器以获得最佳字体质量
+    // Skia 是 Google Chrome 使用的渲染引擎
+    unsafe {
+        std::env::set_var("SLINT_BACKEND", "winit-skia");
+    }
+
     let ui = AppWindow::new()?;
 
     // 检测并设置平台类型
@@ -22,11 +44,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     #[cfg(not(target_os = "macos"))]
     {
         ui.set_is_macos(false);
-
-        // 在非 macOS 平台上移除窗口装饰（完全自定义窗口）
-        ui.window().with_winit_window(|winit_window| {
-            winit_window.set_decorations(false);
-        });
+        // 注意：窗口装饰已通过 app-window.slint 中的 no-frame: true 移除
     }
 
     ui.on_request_increase_value({

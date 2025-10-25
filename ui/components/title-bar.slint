@@ -60,7 +60,9 @@ export component TitleBar inherits Rectangle {
 
         Text {
             x: root.is-macos ? 110px : 44px;
-            y: (parent.height - self.height + 4px) / 2;
+            // 使用固定的垂直居中，避免亚像素偏移
+            y: 0px;
+            height: parent.height;
             text: root.title;
             vertical-alignment: center;
             horizontal-alignment: left;

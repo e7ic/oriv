@@ -6,8 +6,10 @@ authors = ["Your Name"]
 description = "A Slint-based GUI application"
 
 [dependencies]
-slint = "1.14.0"
-i-slint-backend-winit = "1.14.0"
+# 启用 Skia 渲染器以获得更好的字体渲染质量
+# 注意：renderer-skia 仍在实验阶段，如果遇到问题可以换回 renderer-femtovg
+slint = { version = "1.14.1", features = ["backend-winit", "renderer-skia"] }
+i-slint-backend-winit = "1.14.1"
 
 [package.metadata.bundle]
 name = "Oriv"
@@ -20,7 +22,11 @@ short_description = "A Slint-based GUI application"
 long_description = "A cross-platform GUI application built with Slint framework"
 
 [build-dependencies]
-slint-build = "1.14.0"
+slint-build = "1.14.1"
+
+[target.'cfg(windows)'.dependencies]
+# Windows DPI 感知 API
+winapi = { version = "0.3", features = ["shellscalingapi", "winuser"] }
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1"
