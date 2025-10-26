@@ -62,6 +62,7 @@ export component AppWindow inherits Window {
                 title: root.title;
                 is-maximized <=> root.is-maximized;
                 is-macos: root.is-macos;  // 传递平台信息
+                dark-mode: root.dark-mode;
                 titlebar-bg: root.titlebar-bg;
                 text-color: root.text-color;
                 icon-color: root.icon-color;
@@ -112,6 +113,7 @@ export component AppWindow inherits Window {
                         Button {
                             text: root.dark-mode ? "浅色模式" : "深色模式";
                             button-type: ButtonType.default;
+                            dark-mode: root.dark-mode;
                             clicked => {
                                 root.toggle-theme();
                             }
@@ -150,26 +152,31 @@ export component AppWindow inherits Window {
                                     Button {
                                         text: "Primary";
                                         button-type: ButtonType.primary;
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     Button {
                                         text: "Default";
                                         button-type: ButtonType.default;
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     Button {
                                         text: "Dashed";
                                         button-type: ButtonType.dashed;
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     Button {
                                         text: "Text";
                                         button-type: ButtonType.text;
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     Button {
                                         text: "Link";
                                         button-type: ButtonType.link;
+                                        dark-mode: root.dark-mode;
                                     }
                                 }
                             }
@@ -193,18 +200,21 @@ export component AppWindow inherits Window {
                                         text: "Small";
                                         button-type: ButtonType.primary;
                                         size: ButtonSize.small;
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     Button {
                                         text: "Medium";
                                         button-type: ButtonType.primary;
                                         size: ButtonSize.medium;
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     Button {
                                         text: "Large";
                                         button-type: ButtonType.primary;
                                         size: ButtonSize.large;
+                                        dark-mode: root.dark-mode;
                                     }
                                 }
                             }
@@ -227,30 +237,35 @@ export component AppWindow inherits Window {
                                         text: "Delete";
                                         button-type: ButtonType.primary;
                                         danger: true;
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     Button {
                                         text: "Delete";
                                         button-type: ButtonType.default;
                                         danger: true;
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     Button {
                                         text: "Delete";
                                         button-type: ButtonType.dashed;
                                         danger: true;
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     Button {
                                         text: "Delete";
                                         button-type: ButtonType.text;
                                         danger: true;
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     Button {
                                         text: "Delete";
                                         button-type: ButtonType.link;
                                         danger: true;
+                                        dark-mode: root.dark-mode;
                                     }
                                 }
                             }
@@ -273,18 +288,21 @@ export component AppWindow inherits Window {
                                         text: "Disabled";
                                         button-type: ButtonType.primary;
                                         disabled: true;
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     Button {
                                         text: "Disabled";
                                         button-type: ButtonType.default;
                                         disabled: true;
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     Button {
                                         text: "Disabled";
                                         button-type: ButtonType.text;
                                         disabled: true;
+                                        dark-mode: root.dark-mode;
                                     }
                                 }
                             }
@@ -308,12 +326,14 @@ export component AppWindow inherits Window {
                                         text: "Default";
                                         button-type: ButtonType.primary;
                                         shape: ButtonShape.default;
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     Button {
                                         text: "Round";
                                         button-type: ButtonType.primary;
                                         shape: ButtonShape.round;
+                                        dark-mode: root.dark-mode;
                                     }
                                 }
                             }
@@ -337,12 +357,14 @@ export component AppWindow inherits Window {
                                         text: "Primary Block Button";
                                         button-type: ButtonType.primary;
                                         block: true;
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     Button {
                                         text: "Default Block Button";
                                         button-type: ButtonType.default;
                                         block: true;
+                                        dark-mode: root.dark-mode;
                                     }
                                 }
                             }
@@ -385,6 +407,7 @@ export component AppWindow inherits Window {
                                 Input {
                                     width: 300px;
                                     placeholder: "请输入内容...";
+                                    dark-mode: root.dark-mode;
                                 }
                             }
 
@@ -406,18 +429,21 @@ export component AppWindow inherits Window {
                                         width: 200px;
                                         size: InputSize.small;
                                         placeholder: "Small";
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     Input {
                                         width: 200px;
                                         size: InputSize.medium;
                                         placeholder: "Medium (默认)";
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     Input {
                                         width: 200px;
                                         size: InputSize.large;
                                         placeholder: "Large";
+                                        dark-mode: root.dark-mode;
                                     }
                                 }
                             }
@@ -439,30 +465,35 @@ export component AppWindow inherits Window {
                                     Input {
                                         width: 300px;
                                         placeholder: "正常状态";
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     Input {
                                         width: 300px;
                                         text: "错误状态的输入";
                                         status: InputStatus.error;
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     Input {
                                         width: 300px;
                                         text: "警告状态的输入";
                                         status: InputStatus.warning;
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     Input {
                                         width: 300px;
                                         text: "禁用状态";
                                         disabled: true;
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     Input {
                                         width: 300px;
                                         text: "只读状态";
                                         readonly: true;
+                                        dark-mode: root.dark-mode;
                                     }
                                 }
                             }
@@ -485,6 +516,7 @@ export component AppWindow inherits Window {
                                         width: 300px;
                                         label: "用户名";
                                         placeholder: "请输入用户名";
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     LabeledInput {
@@ -492,6 +524,7 @@ export component AppWindow inherits Window {
                                         label: "邮箱";
                                         required: true;
                                         placeholder: "请输入邮箱地址";
+                                        dark-mode: root.dark-mode;
                                     }
 
                                     LabeledInput {
@@ -500,6 +533,7 @@ export component AppWindow inherits Window {
                                         required: true;
                                         placeholder: "请输入密码";
                                         status: InputStatus.error;
+                                        dark-mode: root.dark-mode;
                                     }
                                 }
                             }

@@ -1,0 +1,154 @@
+import { VerticalBox, HorizontalBox, TextEdit } from "std-widgets.slint";
+
+export enum TextAreaSize {
+    small,
+    medium,
+    large,
+}
+
+export enum TextAreaStatus {
+    normal,
+    error,
+    warning,
+}
+
+export component TextArea inherits Rectangle {
+    // 尺寸属性
+    in-out property <TextAreaSize> size: TextAreaSize.medium;
+
+    // 文本内容
+    in-out property <string> text <=> text-edit.text;
+
+    // 状态属性
+    in-out property <bool> disabled <=> text-edit.enabled;
+    in-out property <bool> read-only <=> text-edit.read-only;
+    in-out property <TextAreaStatus> status: TextAreaStatus.normal;
+
+    // 高度配置
+    in-out property <length> textarea-min-height: 80px;
+
+    // 字数限制
+    in-out property <int> max-length: -1;  // -1 表示不限制
+    in-out property <bool> show-count: false;
+
+    // 主题相关
+    in-out property <bool> dark-mode: false;
+
+    // 自定义样式属性
+    in-out property <color> bg-color: dark-mode ? #2a2a2a : #f5f5f5;
+    in-out property <color> focus-border-color: dark-mode ? #4096ff : #1890ff;
+    in-out property <color> error-border-color: #ff4d4f;
+    in-out property <color> warning-border-color: #faad14;
+    in-out property <color> count-text-color: dark-mode ? #666666 : #999999;
+
+    // 尺寸配置
+    property <length> font-size-value: size == TextAreaSize.small ? 12px :
+                                      (size == TextAreaSize.large ? 16px : 14px);
+    property <length> padding-value: size == TextAreaSize.small ? 8px :
+                                     (size == TextAreaSize.large ? 12px : 10px);
+
+    width: 100%;
+    min-height: root.textarea-min-height;
+
+    // 主容器
+    VerticalLayout {
+        spacing: 0px;
+
+        // 输入区域容器
+        Rectangle {
+            width: 100%;
+            background: bg-color;
+            border-radius: 6px;
+            border-width: text-edit.has-focus || status != TextAreaStatus.normal ? 1px : 0px;
+            border-color: {
+                if status == TextAreaStatus.error {
+                    error-border-color
+                } else if status == TextAreaStatus.warning {
+                    warning-border-color
+                } else if text-edit.has-focus {
+                    focus-border-color
+                } else {
+                    transparent
+                }
+            };
+
+            text-edit := TextEdit {
+                x: padding-value;
+                y: padding-value;
+                width: parent.width - padding-value * 2;
+                height: parent.height - padding-value * 2;
+                font-size: font-size-value;
+            }
+        }
+
+        // 字数统计
+        if show-count: HorizontalLayout {
+            height: 24px;
+            padding-top: 4px;
+            padding-right: 4px;
+            alignment: LayoutAlignment.end;
+
+            Text {
+                text: {
+                    if max-length > 0 {
+                        root.text.character-count + " / " + max-length
+                    } else {
+                        root.text.character-count + ""
+                    }
+                };
+                color: (max-length > 0 && root.text.character-count > max-length) ? error-border-color : count-text-color;
+                font-size: 12px;
+                vertical-alignment: center;
+            }
+        }
+    }
+}
+
+// 带标签的文本域组件
+export component LabeledTextArea inherits VerticalLayout {
+    // 标签属性
+    in-out property <string> label: "";
+    in-out property <bool> required: false;
+
+    // TextArea 属性（透传）
+    in-out property <string> text <=> textarea.text;
+    in-out property <bool> disabled <=> textarea.disabled;
+    in-out property <bool> read-only <=> textarea.read-only;
+    in-out property <TextAreaStatus> status <=> textarea.status;
+    in-out property <TextAreaSize> size <=> textarea.size;
+    in-out property <length> textarea-min-height <=> textarea.textarea-min-height;
+    in-out property <int> max-length <=> textarea.max-length;
+    in-out property <bool> show-count <=> textarea.show-count;
+    in-out property <bool> dark-mode: false;
+
+    // 样式属性
+    in-out property <color> label-color: dark-mode ? #e0e0e0 : #333333;
+    in-out property <color> required-color: #ff4d4f;
+
+    spacing: 8px;
+
+    // 标签区域
+    if label != "": HorizontalLayout {
+        spacing: 4px;
+        height: 20px;
+
+        Text {
+            text: root.label;
+            color: label-color;
+            font-size: 14px;
+            vertical-alignment: center;
+        }
+
+        if required: Text {
+            text: "*";
+            color: required-color;
+            font-size: 14px;
+            vertical-alignment: center;
+        }
+    }
+
+    // 文本域
+    textarea := TextArea {
+        dark-mode: root.dark-mode;
+    }
+}

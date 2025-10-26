@@ -1,0 +1,20 @@
+import { VerticalBox, HorizontalBox, TextEdit } from "std-widgets.slint";
+
+export component TextAreaTest inherits Rectangle {
+    in-out property <string> text <=> text-edit.text;
+    in-out property <bool> enabled: true;
+
+    width: 100%;
+    min-height: 80px;
+    background: #f5f5f5;
+    border-radius: 6px;
+
+    text-edit := TextEdit {
+        x: 11px;
+        y: 8px;
+        width: parent.width - 22px;
+        height: parent.height - 16px;
+        enabled: root.enabled;
+        font-size: 14px;
+    }
+}
