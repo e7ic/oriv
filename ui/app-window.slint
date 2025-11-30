@@ -1,6 +1,9 @@
-import { VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
-import { TitleBar, Sidebar } from "./components/index.slint";
+import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
+import { Sidebar, TitleBar } from "./components/index.slint";
 import { ProxyManager } from "./pages/proxy-manager/page.slint";
+import { ProxyRule } from "./pages/proxy-manager/components/rules.slint";
+import { CertInfo } from "./pages/proxy-manager/components/certificates.slint";
+import { LogEntry } from "./pages/proxy-manager/components/logs.slint";
 
 export component AppWindow inherits Window {
     icon: @image-url("../assets/app-icon.png");
@@ -34,14 +37,36 @@ export component AppWindow inherits Window {
     callback toggle-theme();
 
     // 颜色定义
-    property <color> bg-color: dark-mode ? #1e1e1e : white;
-    property <color> titlebar-bg: dark-mode ? #2d2d2d : #f5f5f5;
-    property <color> text-color: dark-mode ? #e0e0e0 : #333;
-    property <color> icon-color: dark-mode ? #b0b0b0 : #666;
-    property <color> button-hover-bg: dark-mode ? #3e3e3e : #e0e0e0;
+    property <color> bg-color: dark-mode ? #1f2937 : #f3f4f6;
+    property <color> titlebar-bg: dark-mode ? #111827 : #ffffff;
+    property <color> text-color: dark-mode ? #f3f4f6 : #111827;
+    property <color> icon-color: dark-mode ? #9ca3af : #4b5563;
+    property <color> button-hover-bg: dark-mode ? #374151 : #e5e7eb;
 
     // 窗口调整大小相关
     property <length> resize-border-size: 8px;  // 可拖动边缘的宽度
+
+    // 代理控制
+    callback toggle-proxy(bool);
+    in property <bool> proxy-running: false;
+    in-out property <string> http-port: "8080";
+    in-out property <string> https-port: "8443";
+
+    // 规则管理
+    in property <[ProxyRule]> rules;
+    callback add-rule(string, string, string);
+    callback remove-rule(string);
+
+    // 证书管理
+    in property <[CertInfo]> certificates;
+    callback generate-ca();
+    callback open-cert-dir();
+    callback delete-cert(string);
+    callback export-cert(string);
+
+    // 日志管理
+    in property <[LogEntry]> logs;
+    callback clear-logs();
 
     Rectangle {
         width: 100%;
@@ -113,7 +138,38 @@ export component AppWindow inherits Window {
                         
                         // Currently only showing Proxy Manager for demo
                         // In a real app, we would switch based on active-index
-                        ProxyManager { }
+                        ProxyManager {
+                            proxy-running: root.proxy-running;
+                            http-port <=> root.http-port;
+                            https-port <=> root.https-port;
+                            rules: root.rules;
+                            certificates: root.certificates;
+                            logs: root.logs;
+                            toggle-proxy(enable) => {
+                                root.toggle-proxy(enable);
+                            }
+                            add-rule(d, t, p) => {
+                                root.add-rule(d, t, p);
+                            }
+                            remove-rule(id) => {
+                                root.remove-rule(id);
+                            }
+                            generate-ca => {
+                                root.generate-ca();
+                            }
+                            open-cert-dir => {
+                                root.open-cert-dir();
+                            }
+                            delete-cert(id) => {
+                                root.delete-cert(id);
+                            }
+                            export-cert(id) => {
+                                root.export-cert(id);
+                            }
+                            clear-logs => {
+                                root.clear-logs();
+                            }
+                        }
                     }
                 }
             }

@@ -1,15 +1,35 @@
 import { VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
 import { TabButton, Button } from "../../components/index.slint";
-import { PlayIcon } from "@lucide";
+import { PlayIcon, SquareIcon } from "../../lucide.slint";
 import { Proxies } from "./components/proxies.slint";
-import { ProxyRules } from "./components/rules.slint";
-import { SSLCertificates } from "./components/certificates.slint";
-import { RequestLogs } from "./components/logs.slint";
+import { ProxyRules, ProxyRule } from "./components/rules.slint";
+import { SSLCertificates, CertInfo } from "./components/certificates.slint";
+import { RequestLogs, LogEntry } from "./components/logs.slint";
 
 export component ProxyManager inherits VerticalLayout {
     padding: 32px;
     spacing: 24px;
     in-out property <int> active-tab: 0; // 0: Settings, 1: Rules, 2: SSL, 3: Logs
+    in property <bool> proxy-running: false;
+    in-out property <string> http-port: "8080";
+    in-out property <string> https-port: "8443";
+    
+    // Rules
+    in property <[ProxyRule]> rules;
+    callback add-rule(string, string, string);
+    callback remove-rule(string);
+
+    // Certificates
+    in property <[CertInfo]> certificates;
+    callback generate-ca();
+    callback open-cert-dir();
+    callback delete-cert(string);
+    callback export-cert(string);
+
+    // Logs
+    in property <[LogEntry]> logs;
+    callback clear-logs();
+    callback toggle-proxy(bool);
 
     // Header Section
     HorizontalLayout {
@@ -41,11 +61,11 @@ export component ProxyManager inherits VerticalLayout {
                 width: 60px;
                 height: 32px;
                 border-radius: 6px;
-                background: #f3f4f6;
+                background: root.proxy-running ? #dcfce7 : #f3f4f6;
                 y: (parent.height - self.height) / 2;
                 Text {
-                    text: "已停止";
-                    color: #4b5563;
+                    text: root.proxy-running ? "运行中" : "已停止";
+                    color: root.proxy-running ? #166534 : #4b5563;
                     font-size: 13px;
                     horizontal-alignment: center;
                     vertical-alignment: center;
@@ -54,11 +74,21 @@ export component ProxyManager inherits VerticalLayout {
 
             // Start Button
             Button {
-                text: "启动代理";
-                primary: true;
+                text: root.proxy-running ? "停止代理" : "启动代理";
+                primary: !root.proxy-running;
+                danger: root.proxy-running;
                 height: 36px;
                 y: (parent.height - self.height) / 2;
-                PlayIcon {
+                clicked => {
+                    root.toggle-proxy(!root.proxy-running);
+                }
+                if !root.proxy-running: PlayIcon {
+                    width: 16px;
+                    height: 16px;
+                    colorize: white;
+                    y: (parent.height - self.height) / 2;
+                }
+                if root.proxy-running: SquareIcon {
                     width: 16px;
                     height: 16px;
                     colorize: white;
@@ -118,16 +148,46 @@ export component ProxyManager inherits VerticalLayout {
         preferred-height: 0;
         VerticalLayout {
             // Tab 0: Proxy Settings
-            if root.active-tab == 0: Proxies { }
+            if root.active-tab == 0: Proxies {
+                http-port <=> root.http-port;
+                https-port <=> root.https-port;
+            }
 
             // Tab 1: Rules
-            if root.active-tab == 1: ProxyRules { }
+            if root.active-tab == 1: ProxyRules {
+                rules: root.rules;
+                add-rule(d, t, p) => {
+                    root.add-rule(d, t, p);
+                }
+                remove-rule(id) => {
+                    root.remove-rule(id);
+                }
+            }
 
             // Tab 2: SSL
-            if root.active-tab == 2: SSLCertificates { }
+            if root.active-tab == 2: SSLCertificates {
+                certificates: root.certificates;
+                generate-ca => {
+                    root.generate-ca();
+                }
+                open-cert-dir => {
+                    root.open-cert-dir();
+                }
+                delete-cert(id) => {
+                    root.delete-cert(id);
+                }
+                export-cert(id) => {
+                    root.export-cert(id);
+                }
+            }
 
             // Tab 3: Logs
-            if root.active-tab == 3: RequestLogs { }
+            if root.active-tab == 3: RequestLogs {
+                logs: root.logs;
+                clear-logs => {
+                    root.clear-logs();
+                }
+            }
         }
     }
 }

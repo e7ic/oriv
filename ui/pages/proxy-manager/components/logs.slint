@@ -68,14 +68,24 @@ component LogItem inherits Rectangle {
     }
 }
 
+export struct LogEntry {
+    time: string,
+    method: string,
+    protocol: string,
+    url: string,
+    status: string,
+    status-code: int,
+}
+
 export component RequestLogs inherits VerticalLayout {
     spacing: 24px;
-    padding-bottom: 24px;
-    alignment: start;
+    in property <[LogEntry]> logs;
+    callback clear-logs();
 
     // Header
     VerticalLayout {
         spacing: 16px;
+        vertical-stretch: 0; // Don't stretch header
         Text {
             text: "请求日志";
             font-size: 16px;
@@ -97,63 +107,35 @@ export component RequestLogs inherits VerticalLayout {
                 text: "清空日志";
                 outline: true;
                 height: 32px;
+                clicked => {
+                    root.clear-logs();
+                }
             }
         }
     }
 
     // Logs List
     Rectangle {
+        vertical-stretch: 1; // Fill remaining space
         background: white;
         border-radius: 12px;
         border-width: 1px;
         border-color: #e5e7eb;
         clip: true;
-        VerticalLayout {
-            padding-top: 16px;
-            padding-bottom: 16px;
-            LogItem {
-                time: "23:51:53";
-                method: "SYSTEM";
-                protocol: "SYSTEM";
-                url: "代理服务器已启动";
-                status: "200";
-                status-color: #111827;
-            }
-
-            LogItem {
-                time: "23:51:00";
-                method: "SYSTEM";
-                protocol: "SYSTEM";
-                url: "代理服务器已启动";
-                status: "200";
-                status-color: #111827;
-            }
-
-            LogItem {
-                time: "14:32:15";
-                method: "GET";
-                protocol: "HTTP/1.1";
-                url: "local.example.com/api/users";
-                status: "200";
-                status-color: #111827;
-            }
-
-            LogItem {
-                time: "14:32:18";
-                method: "POST";
-                protocol: "HTTPS";
-                url: "secure.local.dev/api/login";
-                status: "201";
-                status-color: #111827;
-            }
-
-            LogItem {
-                time: "14:32:22";
-                method: "GET";
-                protocol: "HTTP/1.1";
-                url: "local.example.com/api/data";
-                status: "304";
-                status-color: #e5e7eb; // Gray for 304
+        ScrollView {
+            viewport-height: (root.logs.length * 48px) + 32px;
+            VerticalLayout {
+                padding-top: 16px;
+                padding-bottom: 16px;
+                alignment: start;
+                for log in root.logs: LogItem {
+                    time: log.time;
+                    method: log.method;
+                    protocol: log.protocol;
+                    url: log.url;
+                    status: log.status;
+                    status-color: log.status-code >= 400 ? #ef4444 : (log.status-code >= 300 ? #eab308 : #10b981);
+                }
             }
         }
     }

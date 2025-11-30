@@ -10,6 +10,17 @@ description = "A Slint-based GUI application"
 # 注意：renderer-skia 仍在实验阶段，如果遇到问题可以换回 renderer-femtovg
 slint = { version = "1.14.1", features = ["backend-winit", "renderer-skia"] }
 i-slint-backend-winit = "1.14.1"
+tokio = { version = "1", features = ["full"] }
+hyper = { version = "1", features = ["full"] }
+http-body-util = "0.1"
+hyper-util = { version = "0.1", features = ["full"] }
+bytes = "1"
+uuid = { version = "1.10", features = ["v4", "fast-rng", "macro-diagnostics"] }
+rcgen = "0.14"
+time = { version = "0.3.44", features = ["formatting", "macros"] }
+rsa = "0.9.9"
+dirs = "6.0"
+rfd = "0.15"
 
 [package.metadata.bundle]
 name = "Oriv"

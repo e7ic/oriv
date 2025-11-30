@@ -1,5 +1,5 @@
 import { VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
-import { GlobeIcon, TrashIcon, PlusIcon } from "@lucide";
+import { GlobeIcon, TrashIcon, PlusIcon } from "../../../lucide.slint";
 import {
     ToggleSwitch,
     Button,
@@ -7,6 +7,14 @@ import {
     Input,
     Select,
 } from "../../../components/index.slint";
+
+export struct ProxyRule {
+    id: string,
+    domain: string,
+    target: string,
+    protocol: string,
+    enabled: bool,
+}
 
 component RuleItem inherits Rectangle {
     in property <string> domain;
@@ -104,6 +112,14 @@ export component ProxyRules inherits VerticalLayout {
     spacing: 24px;
     padding-bottom: 24px;
     alignment: start;
+    in property <[ProxyRule]> rules;
+    callback add-rule(string, string, string); // domain, target, protocol
+    callback remove-rule(string); // id
+
+    // Local properties for inputs
+    property <string> new-domain: "";
+    property <string> new-target: "";
+    property <string> new-protocol: "HTTP";
 
     // Add Rule Section
     Rectangle {
@@ -145,7 +161,8 @@ export component ProxyRules inherits VerticalLayout {
                     }
 
                     Input {
-                        text: "local.example.com";
+                        placeholder: "local.example.com";
+                        text <=> root.new-domain;
                     }
                 }
 
@@ -161,7 +178,8 @@ export component ProxyRules inherits VerticalLayout {
                     }
 
                     Input {
-                        text: "3000";
+                        placeholder: "3000";
+                        text <=> root.new-target;
                     }
                 }
 
@@ -177,8 +195,11 @@ export component ProxyRules inherits VerticalLayout {
                     }
 
                     Select {
-                        value: "HTTP";
+                        value: root.new-protocol;
                         options: ["HTTP", "HTTPS"];
+                        selected(val) => {
+                            root.new-protocol = val;
+                        }
                     }
                 }
             }
@@ -187,6 +208,13 @@ export component ProxyRules inherits VerticalLayout {
             Button {
                 text: "添加规则";
                 height: 40px;
+                clicked => {
+                    if (root.new-domain != "" && root.new-target != "") {
+                        root.add-rule(root.new-domain, root.new-target, root.new-protocol);
+                        root.new-domain = "";
+                        root.new-target = "";
+                    }
+                }
                 PlusIcon {
                     width: 16px;
                     height: 16px;
@@ -216,7 +244,7 @@ export component ProxyRules inherits VerticalLayout {
                 }
 
                 Text {
-                    text: "已配置 2 条规则";
+                    text: "已配置 " + root.rules.length + " 条规则";
                     color: #6b7280;
                     font-size: 14px;
                 }
@@ -224,18 +252,14 @@ export component ProxyRules inherits VerticalLayout {
 
             VerticalLayout {
                 spacing: 12px;
-                RuleItem {
-                    domain: "local.example.com";
-                    target: "localhost:3000";
-                    protocol: "HTTP";
-                    enabled: true;
-                }
-
-                RuleItem {
-                    domain: "secure.local.dev";
-                    target: "localhost:3001";
-                    protocol: "HTTPS";
-                    enabled: true;
+                for rule in root.rules: RuleItem {
+                    domain: rule.domain;
+                    target: rule.target;
+                    protocol: rule.protocol;
+                    enabled: rule.enabled;
+                    delete => {
+                        root.remove-rule(rule.id);
+                    }
                 }
             }
         }

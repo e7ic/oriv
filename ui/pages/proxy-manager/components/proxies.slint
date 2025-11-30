@@ -4,6 +4,8 @@ import { ToggleSwitch, Card, Input } from "../../../components/index.slint";
 export component Proxies inherits VerticalLayout {
     spacing: 24px;
     padding-bottom: 24px;
+    in-out property <string> http-port: "8080";
+    in-out property <string> https-port: "8443";
 
     // Proxy Server Config
     Card {
@@ -12,42 +14,32 @@ export component Proxies inherits VerticalLayout {
         HorizontalLayout {
             spacing: 24px;
             VerticalLayout {
+                alignment: start;
                 spacing: 8px;
                 Text {
-                    text: "HTTP 代理端口";
+                    text: "HTTP 代理端口（默认 : 8080）";
                     font-size: 13px;
                     font-weight: 600;
                     color: #374151;
                 }
 
                 Input {
-                    text: "8080";
-                }
-
-                Text {
-                    text: "默认 : 8080";
-                    font-size: 12px;
-                    color: #9ca3af;
+                    text <=> root.http-port;
                 }
             }
 
             VerticalLayout {
+                alignment: start;
                 spacing: 8px;
                 Text {
-                    text: "HTTPS 代理端口";
+                    text: "HTTPS 代理端口（默认 : 8443）";
                     font-size: 13px;
                     font-weight: 600;
                     color: #374151;
                 }
 
                 Input {
-                    text: "8443";
-                }
-
-                Text {
-                    text: "默认 : 8443";
-                    font-size: 12px;
-                    color: #9ca3af;
+                    text <=> root.https-port;
                 }
             }
         }

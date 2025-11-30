@@ -8,7 +8,7 @@ import {
     PlusIcon,
     UploadIcon,
     InfoIcon,
-} from "@lucide";
+} from "../../../lucide.slint";
 
 component CertItem inherits Rectangle {
     in property <string> domain;
@@ -117,10 +117,23 @@ component CertItem inherits Rectangle {
     }
 }
 
+export struct CertInfo {
+    id: string,
+    domain: string,
+    type: string,
+    issuer: string,
+    validity: string,
+}
+
 export component SSLCertificates inherits VerticalLayout {
     spacing: 24px;
     padding-bottom: 24px;
     alignment: start;
+    in property <[CertInfo]> certificates;
+    callback generate-ca();
+    callback open-cert-dir();
+    callback delete-cert(string);
+    callback export-cert(string);
 
     // Header Actions
     VerticalLayout {
@@ -158,6 +171,9 @@ export component SSLCertificates inherits VerticalLayout {
                 text: "生成自签名证书";
                 height: 40px;
                 width: 200px;
+                clicked => {
+                    root.generate-ca();
+                }
                 PlusIcon {
                     width: 18px;
                     height: 18px;
@@ -166,12 +182,15 @@ export component SSLCertificates inherits VerticalLayout {
                 }
             }
 
-            // Import Button
+            // Open Dir Button
             Button {
-                text: "导入证书";
+                text: "打开证书目录";
                 outline: true;
                 height: 40px;
-                width: 120px;
+                width: 140px;
+                clicked => {
+                    root.open-cert-dir();
+                }
                 UploadIcon {
                     width: 14px;
                     height: 14px;
@@ -229,7 +248,7 @@ export component SSLCertificates inherits VerticalLayout {
                 }
 
                 Text {
-                    text: "2 个证书";
+                    text: root.certificates.length + " 个证书";
                     color: #6b7280;
                     font-size: 14px;
                 }
@@ -237,18 +256,17 @@ export component SSLCertificates inherits VerticalLayout {
 
             VerticalLayout {
                 spacing: 12px;
-                CertItem {
-                    domain: "*.local.dev";
-                    type: "自签名";
-                    issuer: "Oriv Self-Signed CA";
-                    validity: "2025-10-24 至 2026-10-24";
-                }
-
-                CertItem {
-                    domain: "localhost";
-                    type: "有效";
-                    issuer: "Oriv Self-Signed CA";
-                    validity: "2025-10-24 至 2026-10-24";
+                for cert in root.certificates: CertItem {
+                    domain: cert.domain;
+                    type: cert.type;
+                    issuer: cert.issuer;
+                    validity: cert.validity;
+                    delete => {
+                        root.delete-cert(cert.id);
+                    }
+                    export => {
+                        root.export-cert(cert.id);
+                    }
                 }
             }
         }
