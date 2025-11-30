@@ -1,0 +1,133 @@
+import { VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
+import { TabButton, Button } from "../../components/index.slint";
+import { PlayIcon } from "@lucide";
+import { Proxies } from "./components/proxies.slint";
+import { ProxyRules } from "./components/rules.slint";
+import { SSLCertificates } from "./components/certificates.slint";
+import { RequestLogs } from "./components/logs.slint";
+
+export component ProxyManager inherits VerticalLayout {
+    padding: 32px;
+    spacing: 24px;
+    in-out property <int> active-tab: 0; // 0: Settings, 1: Rules, 2: SSL, 3: Logs
+
+    // Header Section
+    HorizontalLayout {
+        alignment: space-between;
+        height: 60px;
+        VerticalLayout {
+            spacing: 8px;
+            alignment: center;
+            Text {
+                text: "代理管理器";
+                font-size: 24px;
+                font-weight: 600;
+                color: #111827;
+            }
+
+            Text {
+                text: "管理本地域名代理、CORS 设置和 HTTPS 证书";
+                color: #6b7280;
+                font-size: 14px;
+            }
+        }
+
+        HorizontalLayout {
+            spacing: 16px;
+            alignment: end;
+            
+            // Status Badge
+            Rectangle {
+                width: 60px;
+                height: 32px;
+                border-radius: 6px;
+                background: #f3f4f6;
+                y: (parent.height - self.height) / 2;
+                Text {
+                    text: "已停止";
+                    color: #4b5563;
+                    font-size: 13px;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+
+            // Start Button
+            Button {
+                text: "启动代理";
+                primary: true;
+                height: 36px;
+                y: (parent.height - self.height) / 2;
+                PlayIcon {
+                    width: 16px;
+                    height: 16px;
+                    colorize: white;
+                    y: (parent.height - self.height) / 2;
+                }
+            }
+        }
+    }
+
+    // Tabs Section
+    Rectangle {
+        height: 40px;
+        background: #f3f4f6;
+        border-radius: self.height / 2;
+        width: 500px; // Fixed width for tabs container
+        
+        HorizontalLayout {
+            padding: 4px;
+            spacing: 4px;
+            TabButton {
+                text: "代理设置";
+                active: root.active-tab == 0;
+                clicked => {
+                    root.active-tab = 0;
+                }
+            }
+
+            TabButton {
+                text: "规则管理";
+                active: root.active-tab == 1;
+                clicked => {
+                    root.active-tab = 1;
+                }
+            }
+
+            TabButton {
+                text: "SSL 证书";
+                active: root.active-tab == 2;
+                clicked => {
+                    root.active-tab = 2;
+                }
+            }
+
+            TabButton {
+                text: "请求日志";
+                active: root.active-tab == 3;
+                clicked => {
+                    root.active-tab = 3;
+                }
+            }
+        }
+    }
+
+    // Content Section (Scrollable)
+    ScrollView {
+        vertical-stretch: 1;
+        preferred-height: 0;
+        VerticalLayout {
+            // Tab 0: Proxy Settings
+            if root.active-tab == 0: Proxies { }
+
+            // Tab 1: Rules
+            if root.active-tab == 1: ProxyRules { }
+
+            // Tab 2: SSL
+            if root.active-tab == 2: SSLCertificates { }
+
+            // Tab 3: Logs
+            if root.active-tab == 3: RequestLogs { }
+        }
+    }
+}

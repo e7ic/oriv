@@ -1,0 +1,26 @@
+export component TabButton inherits Rectangle {
+    in property <string> text;
+    in property <bool> active;
+    callback clicked();
+    height: 32px;
+    width: 100px; // Approximate width
+    border-radius: 16px;
+    background: root.active ? white : transparent;
+    
+    // Shadow for active tab (simulated with border for now)
+    border-width: root.active ? 1px : 0px;
+    border-color: #e5e7eb;
+    TouchArea {
+        clicked => {
+            root.clicked();
+        }
+    }
+
+    Text {
+        text: root.text;
+        color: root.active ? #111827 : #6b7280;
+        font-weight: root.active ? 600 : 500;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+}

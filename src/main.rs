@@ -3,6 +3,7 @@
 
 use std::error::Error;
 use i_slint_backend_winit::WinitWindowAccessor;
+use i_slint_backend_winit::winit::window::ResizeDirection;
 
 slint::include_modules!();
 
@@ -104,6 +105,31 @@ fn main() -> Result<(), Box<dyn Error>> {
             let ui = ui_handle.unwrap();
             let current_mode = ui.get_dark_mode();
             ui.set_dark_mode(!current_mode);
+        }
+    });
+
+    // 开始调整窗口大小
+    ui.on_start_resize_window({
+        let ui_handle = ui.as_weak();
+        move |direction: i32| {
+            let ui = ui_handle.unwrap();
+
+            // 将整数方向转换为 ResizeDirection 枚举
+            let resize_direction = match direction {
+                0 => ResizeDirection::East,       // 右
+                1 => ResizeDirection::North,      // 上
+                2 => ResizeDirection::NorthEast,  // 右上
+                3 => ResizeDirection::NorthWest,  // 左上
+                4 => ResizeDirection::South,      // 下
+                5 => ResizeDirection::SouthEast,  // 右下
+                6 => ResizeDirection::SouthWest,  // 左下
+                7 => ResizeDirection::West,       // 左
+                _ => return,  // 无效方向，忽略
+            };
+
+            ui.window().with_winit_window(|winit_window| {
+                let _ = winit_window.drag_resize_window(resize_direction);
+            });
         }
     });
 

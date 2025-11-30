@@ -1,0 +1,20 @@
+export component Tag inherits Rectangle {
+    in property <string> text;
+    in property <color> base-color: #f3f4f6;
+    in property <color> text-color: #4b5563;
+    height: 24px;
+    border-radius: 4px;
+    background: root.base-color;
+    HorizontalLayout {
+        padding-left: 8px;
+        padding-right: 8px;
+        Text {
+            text: root.text;
+            color: root.text-color;
+            font-size: 12px;
+            font-weight: 600;
+            vertical-alignment: center;
+            horizontal-alignment: center;
+        }
+    }
+}

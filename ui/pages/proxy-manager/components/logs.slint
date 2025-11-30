@@ -1,0 +1,160 @@
+import { VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
+import { Tag, Button } from "../../../components/index.slint";
+
+component LogItem inherits Rectangle {
+    in property <string> time;
+    in property <string> method;
+    in property <string> protocol;
+    in property <string> url;
+    in property <string> status;
+    in property <color> status-color;
+    height: 48px;
+    background: white;
+    
+    // Bottom border
+    Rectangle {
+        height: 1px;
+        width: 100%;
+        background: #f3f4f6;
+        y: parent.height - 1px;
+    }
+
+    HorizontalLayout {
+        padding-left: 24px;
+        padding-right: 24px;
+        alignment: start;
+        spacing: 16px;
+
+        // Time
+        Text {
+            text: root.time;
+            color: #6b7280;
+            font-size: 13px;
+            vertical-alignment: center;
+            width: 80px;
+        }
+
+        // Method Badge
+        Tag {
+            text: root.method;
+            y: (parent.height - self.height) / 2;
+        }
+
+        // Protocol Badge
+        Tag {
+            text: root.protocol;
+            base-color: root.protocol == "HTTPS" ? #111827 : #e5e7eb;
+            text-color: root.protocol == "HTTPS" ? white : #374151;
+            y: (parent.height - self.height) / 2;
+        }
+
+        // URL
+        Text {
+            text: root.url;
+            color: #374151;
+            font-size: 13px;
+            vertical-alignment: center;
+            overflow: elide;
+            horizontal-stretch: 1;
+        }
+
+        // Status Badge
+        Tag {
+            text: root.status;
+            base-color: root.status-color;
+            text-color: white;
+            y: (parent.height - self.height) / 2;
+        }
+    }
+}
+
+export component RequestLogs inherits VerticalLayout {
+    spacing: 24px;
+    padding-bottom: 24px;
+    alignment: start;
+
+    // Header
+    VerticalLayout {
+        spacing: 16px;
+        Text {
+            text: "请求日志";
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        HorizontalLayout {
+            alignment: space-between;
+            Text {
+                text: "实时代理请求监控";
+                color: #6b7280;
+                font-size: 14px;
+                vertical-alignment: center;
+            }
+
+            // Clear Button
+            Button {
+                text: "清空日志";
+                outline: true;
+                height: 32px;
+            }
+        }
+    }
+
+    // Logs List
+    Rectangle {
+        background: white;
+        border-radius: 12px;
+        border-width: 1px;
+        border-color: #e5e7eb;
+        clip: true;
+        VerticalLayout {
+            padding-top: 16px;
+            padding-bottom: 16px;
+            LogItem {
+                time: "23:51:53";
+                method: "SYSTEM";
+                protocol: "SYSTEM";
+                url: "代理服务器已启动";
+                status: "200";
+                status-color: #111827;
+            }
+
+            LogItem {
+                time: "23:51:00";
+                method: "SYSTEM";
+                protocol: "SYSTEM";
+                url: "代理服务器已启动";
+                status: "200";
+                status-color: #111827;
+            }
+
+            LogItem {
+                time: "14:32:15";
+                method: "GET";
+                protocol: "HTTP/1.1";
+                url: "local.example.com/api/users";
+                status: "200";
+                status-color: #111827;
+            }
+
+            LogItem {
+                time: "14:32:18";
+                method: "POST";
+                protocol: "HTTPS";
+                url: "secure.local.dev/api/login";
+                status: "201";
+                status-color: #111827;
+            }
+
+            LogItem {
+                time: "14:32:22";
+                method: "GET";
+                protocol: "HTTP/1.1";
+                url: "local.example.com/api/data";
+                status: "304";
+                status-color: #e5e7eb; // Gray for 304
+            }
+        }
+    }
+}

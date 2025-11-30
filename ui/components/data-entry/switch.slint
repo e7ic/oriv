@@ -1,0 +1,28 @@
+export component ToggleSwitch inherits Rectangle {
+    in-out property <bool> checked;
+    callback toggled(bool);
+    width: 44px;
+    height: 24px;
+    border-radius: 12px;
+    background: root.checked ? #2563eb : #e5e7eb;
+    animate background { duration: 200ms; }
+    TouchArea {
+        clicked => {
+            root.checked = !root.checked;
+            root.toggled(root.checked);
+        }
+    }
+
+    Rectangle {
+        x: root.checked ? parent.width - self.width - 2px : 2px;
+        y: (parent.height - self.height) / 2;
+        width: 20px;
+        height: 20px;
+        border-radius: 10px;
+        background: white;
+        animate x {
+            duration: 200ms;
+            easing: ease-in-out;
+        }
+    }
+}

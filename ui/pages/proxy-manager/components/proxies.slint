@@ -1,0 +1,146 @@
+import { VerticalBox, HorizontalBox } from "std-widgets.slint";
+import { ToggleSwitch, Card, Input } from "../../../components/index.slint";
+
+export component Proxies inherits VerticalLayout {
+    spacing: 24px;
+    padding-bottom: 24px;
+
+    // Proxy Server Config
+    Card {
+        title: "代理服务器配置";
+        description: "配置代理服务器监听端口";
+        HorizontalLayout {
+            spacing: 24px;
+            VerticalLayout {
+                spacing: 8px;
+                Text {
+                    text: "HTTP 代理端口";
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: #374151;
+                }
+
+                Input {
+                    text: "8080";
+                }
+
+                Text {
+                    text: "默认 : 8080";
+                    font-size: 12px;
+                    color: #9ca3af;
+                }
+            }
+
+            VerticalLayout {
+                spacing: 8px;
+                Text {
+                    text: "HTTPS 代理端口";
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: #374151;
+                }
+
+                Input {
+                    text: "8443";
+                }
+
+                Text {
+                    text: "默认 : 8443";
+                    font-size: 12px;
+                    color: #9ca3af;
+                }
+            }
+        }
+    }
+
+    // CORS Config
+    Card {
+        title: "CORS 配置";
+        description: "控制跨域资源共享设置";
+        HorizontalLayout {
+            alignment: space-between;
+            height: 40px;
+            VerticalLayout {
+                alignment: center;
+                Text {
+                    text: "启用 CORS 头部";
+                    font-size: 14px;
+                    font-weight: 500;
+                    color: #374151;
+                }
+
+                Text {
+                    text: "向响应中添加 Access-Control-Allow-Origin: *";
+                    font-size: 13px;
+                    color: #6b7280;
+                }
+            }
+
+            ToggleSwitch {
+                checked: true;
+            }
+        }
+    }
+
+    // HTTPS/SSL Config
+    Card {
+        title: "HTTPS/SSL 配置";
+        description: "配置 HTTPS 代理和 SSL 证书选项";
+        has-warning: true;
+        warning-text: "注意：\n自签名证书需要在浏览器中手动信任。建议将根证书添加到系统信任存储中。";
+        VerticalLayout {
+            spacing: 24px;
+            HorizontalLayout {
+                alignment: space-between;
+                VerticalLayout {
+                    alignment: center;
+                    Text {
+                        text: "启用 HTTPS 代理";
+                        font-size: 14px;
+                        font-weight: 500;
+                        color: #374151;
+                    }
+
+                    Text {
+                        text: "为代理服务器启用 SSL/TLS 支持";
+                        font-size: 13px;
+                        color: #6b7280;
+                    }
+                }
+
+                ToggleSwitch {
+                    checked: true;
+                }
+            }
+
+            // Separator
+            Rectangle {
+                height: 1px;
+                background: #f3f4f6;
+            }
+
+            HorizontalLayout {
+                alignment: space-between;
+                VerticalLayout {
+                    alignment: center;
+                    Text {
+                        text: "自动生成自签名证书";
+                        font-size: 14px;
+                        font-weight: 500;
+                        color: #374151;
+                    }
+
+                    Text {
+                        text: "为新域名自动创建自签名证书";
+                        font-size: 13px;
+                        color: #6b7280;
+                    }
+                }
+
+                ToggleSwitch {
+                    checked: true;
+                }
+            }
+        }
+    }
+}

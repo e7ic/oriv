@@ -1,0 +1,164 @@
+import { VerticalBox, HorizontalBox } from "std-widgets.slint";
+
+export component TitleBar inherits Rectangle {
+    width: 100%;
+    height: 40px;
+    clip: true;
+
+    // 对外暴露的属性
+    in-out property <string> title: "ORIV";
+    in-out property <image> logo: @image-url("../../../assets/app-icon.png");
+    in-out property <bool> is-maximized: false;
+    in-out property <bool> is-macos: false;  // 平台检测
+    in-out property <bool> dark-mode: false;
+
+    // 主题颜色属性
+    in-out property <color> titlebar-bg: #f5f5f5;
+    in-out property <color> text-color: #333;
+    in-out property <color> icon-color: #666;
+    in-out property <color> button-hover-bg: #e0e0e0;
+
+    // 对外暴露的回调
+    callback minimize-clicked();
+    callback maximize-clicked();
+    callback close-clicked();
+    callback start-drag();
+    background: titlebar-bg;
+
+    // 标题文本区域（可拖动）
+    drag-area := Rectangle {
+        width: 100%;
+        height: 100%;
+        horizontal-stretch: 1;
+        drag-touch := TouchArea {
+            width: 100%;
+            height: 100%;
+            pointer-event(event) => {
+                if (event.button == PointerEventButton.left && event.kind == PointerEventKind.down) {
+                    root.start-drag();
+                }
+            }
+
+            // 双击标题栏切换最大化
+            double-clicked => {
+                root.maximize-clicked();
+            }
+        }
+
+        // Logo图标
+        // 在 macOS 上，左侧留出空间给原生的红黄绿按钮（约 78px）
+        Image {
+            x: root.is-macos ? 78px : 12px;
+            y: (parent.height - self.height) / 2;
+            width: 24px;
+            height: 24px;
+            source: root.logo;
+        }
+
+        Text {
+            x: root.is-macos ? 110px : 44px;
+            // 使用固定的垂直居中，避免亚像素偏移
+            y: 0px;
+            height: parent.height;
+            text: root.title;
+            vertical-alignment: center;
+            horizontal-alignment: left;
+            font-size: 16px;
+            color: root.text-color;
+        }
+    }
+
+    // 窗口控制按钮（仅在非 macOS 平台显示）
+    if !root.is-macos: VerticalBox {
+        alignment: LayoutAlignment.center;
+        width: 108px;
+        height: 40px;
+        x: parent.width - self.width - 8px;
+        y: 0;
+        HorizontalLayout {
+            width: 100%;
+            height: 24px;
+            alignment: LayoutAlignment.space-between;
+
+            // 最小化按钮
+            Rectangle {
+                width: 24px;
+                height: 24px;
+                border-radius: 6px;
+                background: min-touch.has-hover ? root.button-hover-bg : transparent;
+                TouchArea {
+                    min-touch := TouchArea {
+                        clicked => {
+                            root.minimize-clicked();
+                        }
+                    }
+                }
+
+                Image {
+                    width: 16px;
+                    height: 16px;
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                    source: @image-url("../../../assets/icons/minimize.svg");
+                    colorize: root.icon-color;
+                }
+            }
+
+            // 最大化按钮
+            Rectangle {
+                width: 24px;
+                height: 24px;
+                border-radius: 6px;
+                background: max-touch.has-hover ? root.button-hover-bg : transparent;
+                TouchArea {
+                    max-touch := TouchArea {
+                        clicked => {
+                            root.maximize-clicked();
+                        }
+                    }
+                }
+
+                if !root.is-maximized: Image {
+                    width: 16px;
+                    height: 16px;
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                    source: @image-url("../../../assets/icons/maximize.svg");
+                    colorize: root.icon-color;
+                }
+                if root.is-maximized: Image {
+                    width: 16px;
+                    height: 16px;
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                    source: @image-url("../../../assets/icons/restore.svg");
+                    colorize: root.icon-color;
+                }
+            }
+
+            // 关闭按钮
+            Rectangle {
+                width: 24px;
+                height: 24px;
+                border-radius: 6px;
+                background: close-touch.has-hover ? #e81123 : transparent;
+                TouchArea {
+                    close-touch := TouchArea {
+                        clicked => {
+                            root.close-clicked();
+                        }
+                    }
+                }
+
+                Image {
+                    width: 16px;
+                    height: 16px;
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                    source: @image-url("../../../assets/icons/close.svg");
+                    colorize: close-touch.has-hover ? white : root.icon-color;
+                }
+            }
+        }
+    }
+}

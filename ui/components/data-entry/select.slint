@@ -1,0 +1,76 @@
+import { ChevronDownIcon } from "@lucide";
+
+export component Select inherits Rectangle {
+    in property <string> value;
+    in property <[string]> options;
+    callback selected(string);
+    height: 36px;
+    background: #f3f4f6;
+    border-radius: 6px;
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        alignment: space-between;
+        Text {
+            text: root.value;
+            color: #111827;
+            font-size: 14px;
+            vertical-alignment: center;
+        }
+
+        // Chevron Down Icon
+        ChevronDownIcon {
+            width: 16px;
+            height: 16px;
+            colorize: #6b7280;
+            y: (parent.height - self.height) / 2;
+        }
+    }
+
+    popup := PopupWindow {
+        x: 0;
+        y: root.height + 4px;
+        width: root.width;
+        Rectangle {
+            background: white;
+            border-radius: 6px;
+            border-width: 1px;
+            border-color: #e5e7eb;
+            drop-shadow-blur: 8px;
+            drop-shadow-color: #0000001a;
+            VerticalLayout {
+                padding: 4px;
+                for option[index] in root.options: Rectangle {
+                    height: 32px;
+                    background: touch.has-hover ? #f3f4f6 : transparent;
+                    border-radius: 4px;
+                    HorizontalLayout {
+                        padding-left: 8px;
+                        padding-right: 8px;
+                        Text {
+                            text: option;
+                            color: #111827;
+                            font-size: 14px;
+                            vertical-alignment: center;
+                            width: 100%;
+                            overflow: elide;
+                        }
+                    }
+
+                    touch := TouchArea {
+                        clicked => {
+                            root.selected(option);
+                            popup.close();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    TouchArea {
+        clicked => {
+            popup.show();
+        }
+    }
+}

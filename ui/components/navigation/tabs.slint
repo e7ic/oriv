@@ -1,0 +1,23 @@
+export component TabButton inherits Rectangle {
+    in property <string> text;
+    in property <bool> active;
+    callback clicked();
+    height: 32px;
+    border-radius: 16px;
+    background: root.active ? white : transparent;
+    animate background { duration: 200ms; }
+    TouchArea {
+        clicked => {
+            root.clicked();
+        }
+    }
+
+    Text {
+        text: root.text;
+        color: root.active ? #111827 : #6b7280;
+        font-size: 13px;
+        font-weight: root.active ? 600 : 400;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+}

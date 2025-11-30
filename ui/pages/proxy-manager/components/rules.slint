@@ -1,0 +1,243 @@
+import { VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
+import { GlobeIcon, TrashIcon, PlusIcon } from "@lucide";
+import {
+    ToggleSwitch,
+    Button,
+    Tag,
+    Input,
+    Select,
+} from "../../../components/index.slint";
+
+component RuleItem inherits Rectangle {
+    in property <string> domain;
+    in property <string> target;
+    in property <string> protocol;
+    in property <bool> enabled;
+    callback toggle(bool);
+    callback delete();
+    height: 72px;
+    background: white;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: #e5e7eb;
+    HorizontalLayout {
+        padding-left: 24px;
+        padding-right: 24px;
+        alignment: space-between;
+        HorizontalLayout {
+            spacing: 16px;
+            alignment: start;
+            
+            // Icon: Globe
+            Rectangle {
+                width: 40px;
+                height: 40px;
+                y: (parent.height - self.height) / 2;
+                GlobeIcon {
+                    width: 24px;
+                    height: 24px;
+                    colorize: #3b82f6;
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                }
+            }
+
+            VerticalLayout {
+                alignment: center;
+                spacing: 4px;
+                HorizontalLayout {
+                    spacing: 8px;
+                    Text {
+                        text: root.domain;
+                        font-size: 14px;
+                        font-weight: 500;
+                        color: #111827;
+                    }
+                    
+                    // Protocol Badge
+                    Tag {
+                        text: root.protocol;
+                        y: (parent.height - self.height) / 2;
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: 8px;
+                    Text {
+                        text: "→";
+                        color: #9ca3af;
+                        font-size: 12px;
+                    }
+
+                    Text {
+                        text: root.target;
+                        font-size: 13px;
+                        color: #6b7280;
+                    }
+                }
+            }
+        }
+
+        HorizontalLayout {
+            spacing: 16px;
+            alignment: end;
+            
+            // Status Toggle
+            Button {
+                danger: true;
+                clicked => {
+                    root.delete();
+                }
+                y: (parent.height - self.height) / 2;
+                TrashIcon {
+                    width: 16px;
+                    height: 16px;
+                    colorize: white;
+                    y: (parent.height - self.height) / 2;
+                }
+            }
+        }
+    }
+}
+
+export component ProxyRules inherits VerticalLayout {
+    spacing: 24px;
+    padding-bottom: 24px;
+    alignment: start;
+
+    // Add Rule Section
+    Rectangle {
+        background: white;
+        border-radius: 12px;
+        border-width: 1px;
+        border-color: #e5e7eb;
+        VerticalLayout {
+            padding: 24px;
+            spacing: 24px;
+            VerticalLayout {
+                spacing: 8px;
+                Text {
+                    text: "添加代理规则";
+                    font-size: 16px;
+                    font-weight: 600;
+                    color: #111827;
+                }
+
+                Text {
+                    text: "将自定义域名映射到本地端口";
+                    color: #6b7280;
+                    font-size: 14px;
+                }
+            }
+
+            HorizontalLayout {
+                spacing: 16px;
+                height: 64px; // Container height for inputs
+
+                // Domain Input
+                VerticalLayout {
+                    spacing: 8px;
+                    Text {
+                        text: "自定义域名";
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: #374151;
+                    }
+
+                    Input {
+                        text: "local.example.com";
+                    }
+                }
+
+                // Port Input
+                VerticalLayout {
+                    spacing: 8px;
+                    width: 120px;
+                    Text {
+                        text: "目标端口";
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: #374151;
+                    }
+
+                    Input {
+                        text: "3000";
+                    }
+                }
+
+                // Protocol Select
+                VerticalLayout {
+                    spacing: 8px;
+                    width: 120px;
+                    Text {
+                        text: "协议";
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: #374151;
+                    }
+
+                    Select {
+                        value: "HTTP";
+                        options: ["HTTP", "HTTPS"];
+                    }
+                }
+            }
+
+            // Add Button
+            Button {
+                text: "添加规则";
+                height: 40px;
+                PlusIcon {
+                    width: 16px;
+                    height: 16px;
+                    colorize: white;
+                    y: (parent.height - self.height) / 2;
+                }
+            }
+        }
+    }
+
+    // Active Rules List
+    Rectangle {
+        background: white;
+        border-radius: 12px;
+        border-width: 1px;
+        border-color: #e5e7eb;
+        VerticalLayout {
+            padding: 24px;
+            spacing: 16px;
+            VerticalLayout {
+                spacing: 8px;
+                Text {
+                    text: "活动代理规则";
+                    font-size: 16px;
+                    font-weight: 600;
+                    color: #111827;
+                }
+
+                Text {
+                    text: "已配置 2 条规则";
+                    color: #6b7280;
+                    font-size: 14px;
+                }
+            }
+
+            VerticalLayout {
+                spacing: 12px;
+                RuleItem {
+                    domain: "local.example.com";
+                    target: "localhost:3000";
+                    protocol: "HTTP";
+                    enabled: true;
+                }
+
+                RuleItem {
+                    domain: "secure.local.dev";
+                    target: "localhost:3001";
+                    protocol: "HTTPS";
+                    enabled: true;
+                }
+            }
+        }
+    }
+}

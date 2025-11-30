@@ -1,0 +1,39 @@
+export component Input inherits Rectangle {
+    in-out property <string> text <=> input.text;
+    in property <string> placeholder;
+    in property <length> font-size: 14px;
+    callback accepted(string);
+    callback edited(string);
+    height: 36px;
+    background: #f3f4f6;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: input.has-focus ? #2563eb : transparent;
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        input := TextInput {
+            color: #4b5563;
+            font-size: root.font-size;
+            vertical-alignment: center;
+            height: 100%;
+            width: 100%;
+            single-line: true;
+            accepted => {
+                root.accepted(self.text);
+            }
+            edited => {
+                root.edited(self.text);
+            }
+        }
+    }
+    
+    // Placeholder
+    if root.text == "" && root.placeholder != "": Text {
+        x: 12px;
+        text: root.placeholder;
+        color: #9ca3af;
+        font-size: root.font-size;
+        vertical-alignment: center;
+    }
+}

@@ -1,0 +1,295 @@
+import { VerticalBox } from "std-widgets.slint";
+import {
+    ServerIcon,
+    ZapIcon,
+    BracesIcon,
+    HashIcon,
+    PaletteIcon,
+    WrenchIcon,
+    MoonIcon,
+    SunIcon,
+} from "@lucide";
+
+export component Sidebar inherits Rectangle {
+    in-out property <int> active-index: 0;
+    callback navigate(int);
+    callback toggle-dark-mode();
+    in property <bool> dark-mode;
+    width: 250px;
+    background: white; // White background as per design
+    
+    // Right border separator
+    Rectangle {
+        width: 1px;
+        height: 100%;
+        background: #e5e7eb;
+        x: parent.width - 1px;
+    }
+
+    VerticalLayout {
+        padding: 16px;
+        spacing: 8px;
+        alignment: space-between;
+
+        // Top Section: Logo and Navigation
+        VerticalLayout {
+            spacing: 24px;
+
+            // Logo / App Name
+            Text {
+                text: "Oriv\n开发工具";
+                font-size: 16px;
+                font-weight: 600;
+                color: #374151;
+            }
+
+            // Navigation Items
+            VerticalLayout {
+                spacing: 4px;
+
+                // Item 0: Proxy Manager (Active)
+                Rectangle {
+                    height: 40px;
+                    border-radius: 6px;
+                    background: root.active-index == 0 ? #2563eb : transparent; // Blue when active
+                    
+                    TouchArea {
+                        clicked => {
+                            root.navigate(0);
+                        }
+                    }
+
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        spacing: 12px;
+                        alignment: start;
+                        
+                        // Icon: Server
+                        ServerIcon {
+                            width: 16px;
+                            height: 16px;
+                            colorize: root.active-index == 0 ? white : #6b7280;
+                            y: (parent.height - self.height) / 2;
+                        }
+
+                        Text {
+                            text: "代理管理器";
+                            vertical-alignment: center;
+                            color: root.active-index == 0 ? white : #4b5563;
+                            font-weight: root.active-index == 0 ? 500 : 400;
+                            font-size: 14px;
+                        }
+                    }
+                }
+
+                // Item 1: API Tester
+                Rectangle {
+                    height: 40px;
+                    border-radius: 6px;
+                    background: root.active-index == 1 ? #2563eb : transparent;
+                    TouchArea {
+                        clicked => {
+                            root.navigate(1);
+                        }
+                    }
+
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        spacing: 12px;
+                        alignment: start;
+                        
+                        // Icon: Zap
+                        ZapIcon {
+                            width: 16px;
+                            height: 16px;
+                            colorize: root.active-index == 1 ? white : #6b7280;
+                            y: (parent.height - self.height) / 2;
+                        }
+
+                        Text {
+                            text: "API 测试器";
+                            vertical-alignment: center;
+                            color: root.active-index == 1 ? white : #4b5563;
+                            font-weight: root.active-index == 1 ? 500 : 400;
+                            font-size: 14px;
+                        }
+                    }
+                }
+
+                // Item 2: JSON Tools
+                Rectangle {
+                    height: 40px;
+                    border-radius: 6px;
+                    background: root.active-index == 2 ? #2563eb : transparent;
+                    TouchArea {
+                        clicked => {
+                            root.navigate(2);
+                        }
+                    }
+
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        spacing: 12px;
+                        alignment: start;
+                        
+                        // Icon: Braces
+                        BracesIcon {
+                            width: 16px;
+                            height: 16px;
+                            colorize: root.active-index == 2 ? white : #6b7280;
+                            y: (parent.height - self.height) / 2;
+                        }
+
+                        Text {
+                            text: "JSON 工具";
+                            vertical-alignment: center;
+                            color: root.active-index == 2 ? white : #4b5563;
+                            font-weight: root.active-index == 2 ? 500 : 400;
+                            font-size: 14px;
+                        }
+                    }
+                }
+                
+                // Item 3: Hash Encoder
+                Rectangle {
+                    height: 40px;
+                    border-radius: 6px;
+                    background: root.active-index == 3 ? #2563eb : transparent;
+                    TouchArea {
+                        clicked => {
+                            root.navigate(3);
+                        }
+                    }
+
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        spacing: 12px;
+                        alignment: start;
+                        
+                        // Icon: Hash
+                        HashIcon {
+                            width: 16px;
+                            height: 16px;
+                            colorize: root.active-index == 3 ? white : #6b7280;
+                            y: (parent.height - self.height) / 2;
+                        }
+
+                        Text {
+                            text: "哈希编码器";
+                            vertical-alignment: center;
+                            color: root.active-index == 3 ? white : #4b5563;
+                            font-weight: root.active-index == 3 ? 500 : 400;
+                            font-size: 14px;
+                        }
+                    }
+                }
+                
+                // Item 4: Color Tools
+                Rectangle {
+                    height: 40px;
+                    border-radius: 6px;
+                    background: root.active-index == 4 ? #2563eb : transparent;
+                    TouchArea {
+                        clicked => {
+                            root.navigate(4);
+                        }
+                    }
+
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        spacing: 12px;
+                        alignment: start;
+                        
+                        // Icon: Palette
+                        PaletteIcon {
+                            width: 16px;
+                            height: 16px;
+                            colorize: root.active-index == 4 ? white : #6b7280;
+                            y: (parent.height - self.height) / 2;
+                        }
+
+                        Text {
+                            text: "颜色工具";
+                            vertical-alignment: center;
+                            color: root.active-index == 4 ? white : #4b5563;
+                            font-weight: root.active-index == 4 ? 500 : 400;
+                            font-size: 14px;
+                        }
+                    }
+                }
+                
+                // Item 5: Other Tools
+                Rectangle {
+                    height: 40px;
+                    border-radius: 6px;
+                    background: root.active-index == 5 ? #2563eb : transparent;
+                    TouchArea {
+                        clicked => {
+                            root.navigate(5);
+                        }
+                    }
+
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        spacing: 12px;
+                        alignment: start;
+                        
+                        // Icon: Wrench
+                        WrenchIcon {
+                            width: 16px;
+                            height: 16px;
+                            colorize: root.active-index == 5 ? white : #6b7280;
+                            y: (parent.height - self.height) / 2;
+                        }
+
+                        Text {
+                            text: "其他工具";
+                            vertical-alignment: center;
+                            color: root.active-index == 5 ? white : #4b5563;
+                            font-weight: root.active-index == 5 ? 500 : 400;
+                            font-size: 14px;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Bottom Section: Dark Mode Toggle
+        Rectangle {
+            height: 40px;
+            border-radius: 8px;
+            border-width: 1px;
+            border-color: #e5e7eb;
+            TouchArea {
+                clicked => {
+                    root.toggle-dark-mode();
+                }
+            }
+
+            HorizontalLayout {
+                alignment: center;
+                spacing: 8px;
+                
+                // Icon: Moon/Sun
+                if root.dark-mode: MoonIcon {
+                    width: 16px;
+                    height: 16px;
+                    colorize: #4b5563;
+                    y: (parent.height - self.height) / 2;
+                }
+                if !root.dark-mode: SunIcon {
+                    width: 16px;
+                    height: 16px;
+                    colorize: #4b5563;
+                    y: (parent.height - self.height) / 2;
+                }
+                Text {
+                    text: root.dark-mode ? "浅色模式" : "深色模式";
+                    color: #4b5563;
+                    font-size: 14px;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+}

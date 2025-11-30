@@ -1,0 +1,80 @@
+import { VerticalBox, HorizontalBox } from "std-widgets.slint";
+import { ShieldAlertIcon } from "@lucide";
+
+export component Card inherits Rectangle {
+    in property <string> title;
+    in property <string> description;
+    in property <bool> has-warning: false;
+    in property <string> warning-text: "";
+    background: white;
+    border-radius: 12px;
+    border-width: 1px;
+    border-color: #e5e7eb;
+    VerticalLayout {
+        padding: 24px;
+        spacing: 16px;
+        alignment: start;
+
+        // Header
+        VerticalLayout {
+            spacing: 8px;
+            HorizontalLayout {
+                spacing: 8px;
+                // Icon: Shield Alert
+                if root.has-warning: ShieldAlertIcon {
+                    width: 24px;
+                    height: 24px;
+                    colorize: #2563eb;
+                    y: (parent.height - self.height) / 2;
+                }
+                Text {
+                    text: root.title;
+                    font-size: 16px;
+                    font-weight: 600;
+                    color: #111827;
+                }
+            }
+
+            Text {
+                text: root.description;
+                color: #6b7280;
+                font-size: 14px;
+                wrap: word-wrap;
+            }
+        }
+
+        // Content slot
+        @children
+        
+        // Warning box
+        if root.has-warning: Rectangle {
+            background: #fffbeb; // Yellow-50
+            border-radius: 6px;
+            border-width: 1px;
+            border-color: #fcd34d; // Yellow-300
+            
+            HorizontalLayout {
+                padding: 12px;
+                spacing: 8px;
+                alignment: start;
+                
+                // Warning icon: Shield Alert (Orange)
+                ShieldAlertIcon {
+                    width: 24px;
+                    height: 24px;
+                    colorize: #92400e; // Yellow-800
+                    y: 0; // Align to top
+                }
+
+                Text {
+                    text: root.warning-text;
+                    color: #92400e;
+                    font-size: 13px;
+                    font-weight: 500;
+                    wrap: word-wrap;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,346 @@
+import { VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
+import { Button, Tag } from "../../../components/index.slint";
+import {
+    ShieldIcon,
+    DownloadIcon,
+    TrashIcon,
+    KeyIcon,
+    PlusIcon,
+    UploadIcon,
+    InfoIcon,
+} from "@lucide";
+
+component CertItem inherits Rectangle {
+    in property <string> domain;
+    in property <string> type; // "自签名" or "有效"
+    in property <string> issuer;
+    in property <string> validity;
+    callback export();
+    callback delete();
+    height: 80px;
+    background: white;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: #e5e7eb;
+    HorizontalLayout {
+        padding-left: 24px;
+        padding-right: 24px;
+        alignment: space-between;
+        HorizontalLayout {
+            spacing: 16px;
+            alignment: start;
+            
+            // Icon: Shield
+            Rectangle {
+                width: 40px;
+                height: 40px;
+                y: (parent.height - self.height) / 2;
+                ShieldIcon {
+                    width: 24px;
+                    height: 24px;
+                    colorize: #3b82f6;
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                }
+            }
+
+            VerticalLayout {
+                alignment: center;
+                spacing: 4px;
+                HorizontalLayout {
+                    spacing: 8px;
+                    Text {
+                        text: root.domain;
+                        font-size: 14px;
+                        font-weight: 500;
+                        color: #111827;
+                    }
+                    
+                    // Type Badge
+                    Tag {
+                        text: root.type;
+                        base-color: root.type == "自签名" ? #f3f4f6 : #dcfce7;
+                        text-color: root.type == "自签名" ? #4b5563 : #166534;
+                        y: (parent.height - self.height) / 2;
+                    }
+                }
+
+                Text {
+                    text: "签发者 : " + root.issuer;
+                    font-size: 12px;
+                    color: #6b7280;
+                }
+
+                Text {
+                    text: "有效期 : " + root.validity;
+                    font-size: 12px;
+                    color: #6b7280;
+                }
+            }
+        }
+
+        HorizontalLayout {
+            spacing: 12px;
+            alignment: end;
+            
+            // Export Button
+            Button {
+                text: "导出";
+                outline: true;
+                clicked => {
+                    root.export();
+                }
+                y: (parent.height - self.height) / 2;
+                DownloadIcon {
+                    width: 16px;
+                    height: 16px;
+                    colorize: #374151;
+                    y: (parent.height - self.height) / 2;
+                }
+            }
+
+            // Delete Button
+            Button {
+                danger: true;
+                clicked => {
+                    root.delete();
+                }
+                y: (parent.height - self.height) / 2;
+                TrashIcon {
+                    width: 16px;
+                    height: 16px;
+                    colorize: white;
+                    y: (parent.height - self.height) / 2;
+                }
+            }
+        }
+    }
+}
+
+export component SSLCertificates inherits VerticalLayout {
+    spacing: 24px;
+    padding-bottom: 24px;
+    alignment: start;
+
+    // Header Actions
+    VerticalLayout {
+        spacing: 16px;
+        HorizontalLayout {
+            spacing: 8px;
+            
+            // Icon: Key
+            KeyIcon {
+                width: 24px;
+                height: 24px;
+                colorize: #2563eb;
+                y: (parent.height - self.height) / 2;
+            }
+
+            Text {
+                text: "SSL 证书管理";
+                font-size: 16px;
+                font-weight: 600;
+                color: #111827;
+            }
+        }
+
+        Text {
+            text: "管理自签名证书和导入自定义证书";
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        HorizontalLayout {
+            spacing: 16px;
+            
+            // Generate Button
+            Button {
+                text: "生成自签名证书";
+                height: 40px;
+                width: 200px;
+                PlusIcon {
+                    width: 18px;
+                    height: 18px;
+                    colorize: white;
+                    y: (parent.height - self.height) / 2;
+                }
+            }
+
+            // Import Button
+            Button {
+                text: "导入证书";
+                outline: true;
+                height: 40px;
+                width: 120px;
+                UploadIcon {
+                    width: 14px;
+                    height: 14px;
+                    colorize: #374151;
+                    y: (parent.height - self.height) / 2;
+                }
+            }
+        }
+        
+        // Info Box
+        Rectangle {
+            height: 40px;
+            background: white;
+            border-radius: 6px;
+            border-width: 1px;
+            border-color: #e5e7eb;
+            HorizontalLayout {
+                padding-left: 12px;
+                spacing: 8px;
+                
+                // Icon: Info
+                InfoIcon {
+                    width: 16px;
+                    height: 16px;
+                    colorize: #4b5563;
+                    y: (parent.height - self.height) / 2;
+                }
+
+                Text {
+                    text: "自签名证书已准备就绪。如需在浏览器中使用，请导出根证书并添加到系统信任存储。";
+                    color: #6b7280;
+                    font-size: 13px;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+
+    // Installed Certificates List
+    Rectangle {
+        background: white;
+        border-radius: 12px;
+        border-width: 1px;
+        border-color: #e5e7eb;
+        VerticalLayout {
+            padding: 24px;
+            spacing: 16px;
+            VerticalLayout {
+                spacing: 8px;
+                Text {
+                    text: "已安装的证书";
+                    font-size: 16px;
+                    font-weight: 600;
+                    color: #111827;
+                }
+
+                Text {
+                    text: "2 个证书";
+                    color: #6b7280;
+                    font-size: 14px;
+                }
+            }
+
+            VerticalLayout {
+                spacing: 12px;
+                CertItem {
+                    domain: "*.local.dev";
+                    type: "自签名";
+                    issuer: "Oriv Self-Signed CA";
+                    validity: "2025-10-24 至 2026-10-24";
+                }
+
+                CertItem {
+                    domain: "localhost";
+                    type: "有效";
+                    issuer: "Oriv Self-Signed CA";
+                    validity: "2025-10-24 至 2026-10-24";
+                }
+            }
+        }
+    }
+
+    // Installation Guide
+    Rectangle {
+        background: white;
+        border-radius: 12px;
+        border-width: 1px;
+        border-color: #e5e7eb;
+        VerticalLayout {
+            padding: 24px;
+            spacing: 16px;
+            Text {
+                text: "安装指南";
+                font-size: 16px;
+                font-weight: 600;
+                color: #111827;
+            }
+
+            VerticalLayout {
+                spacing: 8px;
+                Text {
+                    text: "Windows:";
+                    font-weight: 600;
+                    font-size: 13px;
+                    color: #374151;
+                }
+
+                Text {
+                    text: "    导出根证书为 .crt 文件";
+                    font-size: 13px;
+                    color: #4b5563;
+                }
+
+                Text {
+                    text: "    双击证书文件并选择\"安装证书\"";
+                    font-size: 13px;
+                    color: #4b5563;
+                }
+
+                Text {
+                    text: "    选择\"本地计算机\"并将证书存储到\"受信任的根证书颁发机构\"";
+                    font-size: 13px;
+                    color: #4b5563;
+                }
+
+                Text {
+                    text: "macOS:";
+                    font-weight: 600;
+                    font-size: 13px;
+                    color: #374151;
+                }
+
+                Text {
+                    text: "    导出根证书为 .pem 文件";
+                    font-size: 13px;
+                    color: #4b5563;
+                }
+
+                Text {
+                    text: "    双击证书文件打开\"钥匙串访问\"";
+                    font-size: 13px;
+                    color: #4b5563;
+                }
+
+                Text {
+                    text: "    找到证书并设置为\"始终信任\"";
+                    font-size: 13px;
+                    color: #4b5563;
+                }
+
+                Text {
+                    text: "Linux:";
+                    font-weight: 600;
+                    font-size: 13px;
+                    color: #374151;
+                }
+
+                Text {
+                    text: "    复制证书到 /usr/local/share/ca-certificates/";
+                    font-size: 13px;
+                    color: #4b5563;
+                }
+
+                Text {
+                    text: "    运行 sudo update-ca-certificates";
+                    font-size: 13px;
+                    color: #4b5563;
+                }
+            }
+        }
+    }
+}

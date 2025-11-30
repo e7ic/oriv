@@ -1,0 +1,36 @@
+export component Button inherits Rectangle {
+    in property <string> text;
+    in property <bool> outline: false;
+    in property <bool> primary: false;
+    in property <bool> danger: false;
+    callback clicked();
+    height: 32px; // Default height
+    border-radius: 6px;
+    
+    // Background logic
+    background: root.primary ? (root.danger ? #dc2626 : #10b981) : (root.danger ? #dc2626 : (root.outline ? white : #0f172a));
+               
+    // Border logic
+    border-width: root.outline ? 1px : 0px;
+    border-color: #e5e7eb;
+    TouchArea {
+        clicked => {
+            root.clicked();
+        }
+    }
+
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        spacing: 8px;
+        alignment: center;
+        @children
+        if root.text != "": Text {
+            text: root.text;
+            color: root.outline ? #374151 : white;
+            font-size: 13px;
+            font-weight: 500;
+            vertical-alignment: center;
+        }
+    }
+}
