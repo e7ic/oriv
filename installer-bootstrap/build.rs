@@ -29,4 +29,14 @@ fn main() {
     println!("cargo:rerun-if-env-changed=ORIV_MSI_PATH");
     println!("cargo:rerun-if-changed={}", source);
     println!("cargo:rustc-env=ORIV_MSI_EMBED_PATH={}", out_msi.display());
+
+    if cfg!(target_os = "windows") {
+        let mut res = winres::WindowsResource::new();
+        // Point to the .ico file. User needs to convert png to ico.
+        let icon_path = PathBuf::from("assets/app-icon.ico");
+        if icon_path.exists() {
+            res.set_icon(icon_path.to_str().unwrap());
+        }
+        res.compile().unwrap();
+    }
 }
