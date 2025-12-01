@@ -1,0 +1,352 @@
+import { LineEdit } from "std-widgets.slint";
+
+// --- Design System ---
+
+global Palette {
+    out property <color> primary: #2563eb; // Blue 600
+    out property <color> primary-hover: #1d4ed8; // Blue 700
+    out property <color> background: #ffffff;
+    out property <color> surface: #f8fafc; // Slate 50
+    out property <color> text-primary: #0f172a; // Slate 900
+    out property <color> text-secondary: #64748b; // Slate 500
+    out property <color> border: #e2e8f0; // Slate 200
+    out property <color> success: #10b981; // Emerald 500
+    out property <color> error: #ef4444; // Red 500
+}
+
+component PrimaryButton inherits Rectangle {
+    in property <string> text;
+    in property <bool> enabled: true;
+    callback clicked;
+
+    width: 120px;
+    height: 40px;
+    border-radius: 8px;
+    background: root.enabled ? (touch.pressed ? Palette.primary-hover : (touch.has-hover ? Palette.primary-hover : Palette.primary)) : Palette.border;
+    animate background { duration: 150ms; }
+
+    touch := TouchArea {
+        clicked => {
+            if (root.enabled) {
+                root.clicked();
+            }
+        }
+    }
+
+    Text {
+        text: root.text;
+        color: root.enabled ? #ffffff : Palette.text-secondary;
+        font-size: 14px;
+        font-weight: 600;
+        vertical-alignment: center;
+        horizontal-alignment: center;
+    }
+}
+
+component SecondaryButton inherits Rectangle {
+    in property <string> text;
+    in property <bool> enabled: true;
+    callback clicked;
+
+    width: 120px;
+    height: 40px;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: root.enabled ? (touch.has-hover ? Palette.text-secondary : Palette.border) : Palette.border;
+    background: transparent;
+    animate border-color { duration: 150ms; }
+
+    touch := TouchArea {
+        clicked => {
+            if (root.enabled) {
+                root.clicked();
+            }
+        }
+    }
+
+    Text {
+        text: root.text;
+        color: root.enabled ? Palette.text-primary : Palette.text-secondary;
+        font-size: 14px;
+        font-weight: 500;
+        vertical-alignment: center;
+        horizontal-alignment: center;
+    }
+}
+
+component InputField inherits Rectangle {
+    in-out property <string> text <=> input.text;
+    in property <bool> read-only <=> input.read-only;
+    in property <string> placeholder;
+
+    height: 40px;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: input.has-focus ? Palette.primary : Palette.border;
+    background: #ffffff;
+    animate border-color { duration: 150ms; }
+
+    input := LineEdit {
+        width: 100%;
+        height: 100%;
+        font-size: 14px;
+        placeholder-text: root.placeholder;
+        enabled: !root.read-only;
+    }
+}
+
+// --- Main Window ---
+
+export component SetupWindow inherits Window {
+    title: "Oriv Installer";
+    width: 720px;
+    height: 480px;
+    background: Palette.surface;
+
+    // Properties
+    in-out property <string> install_path;
+    in-out property <string> status_text;
+    in-out property <float> progress;
+    in-out property <bool> installing;
+    in-out property <int> current_step: 0; // 0: Welcome, 1: Path, 2: Progress, 3: Done
+    property <bool> is_done: !installing && progress >= 1.0;
+
+    // Callbacks
+    callback browse();
+    callback install(string);
+    callback open_log();
+    callback quit();
+
+    // Main Layout
+    VerticalLayout {
+        padding: 0px;
+        
+        // Header
+        Rectangle {
+            height: 60px;
+            background: #ffffff;
+            HorizontalLayout {
+                padding-left: 32px;
+                padding-right: 32px;
+                alignment: space-between;
+                Text {
+                    text: "Oriv";
+                    font-size: 20px;
+                    font-weight: 700;
+                    color: Palette.text-primary;
+                    vertical-alignment: center;
+                }
+            }
+
+            Rectangle {
+                y: parent.height - 1px;
+                height: 1px;
+                background: Palette.border;
+            }
+        }
+
+        // Content Area
+        Rectangle {
+            vertical-stretch: 1;
+            
+            // Step 0: Welcome
+            if (root.current_step == 0): VerticalLayout {
+                alignment: center;
+                spacing: 24px;
+                padding: 40px;
+
+                Text {
+                    text: "Welcome to Oriv";
+                    font-size: 32px;
+                    font-weight: 700;
+                    color: Palette.text-primary;
+                    horizontal-alignment: center;
+                }
+
+                Text {
+                    text: "The next generation proxy manager.\nSimple, powerful, and secure.";
+                    font-size: 16px;
+                    color: Palette.text-secondary;
+                    horizontal-alignment: center;
+                    wrap: word-wrap;
+                }
+
+                Rectangle {
+                    height: 20px;
+                } // Spacer
+
+                HorizontalLayout {
+                    alignment: center;
+                    spacing: 16px;
+
+                    PrimaryButton {
+                        text: "Install Now";
+                        width: 160px;
+                        height: 48px;
+                        clicked => {
+                            root.current_step = 2;
+                            root.install(root.install_path);
+                        }
+                    }
+
+                    SecondaryButton {
+                        text: "Customize";
+                        width: 160px;
+                        height: 48px;
+                        clicked => {
+                            root.current_step = 1;
+                        }
+                    }
+                }
+            }
+
+            // Step 1: Path Selection
+            if (root.current_step == 1): VerticalLayout {
+                alignment: center;
+                spacing: 24px;
+                padding-left: 80px;
+                padding-right: 80px;
+
+                Text {
+                    text: "Installation Options";
+                    font-size: 24px;
+                    font-weight: 600;
+                    color: Palette.text-primary;
+                    horizontal-alignment: center;
+                }
+
+                VerticalLayout {
+                    spacing: 8px;
+                    Text {
+                        text: "Install Location";
+                        font-size: 14px;
+                        font-weight: 500;
+                        color: Palette.text-primary;
+                    }
+
+                    HorizontalLayout {
+                        spacing: 12px;
+                        height: 40px;
+                        InputField {
+                            text <=> root.install_path;
+                            horizontal-stretch: 1;
+                            read-only: root.installing;
+                        }
+
+                        SecondaryButton {
+                            text: "Browse";
+                            width: 80px;
+                            clicked => {
+                                root.browse();
+                            }
+                        }
+                    }
+
+                    Text {
+                        text: "Required space: ~50MB";
+                        font-size: 12px;
+                        color: Palette.text-secondary;
+                    }
+                }
+
+                Rectangle {
+                    height: 20px;
+                } // Spacer
+
+                HorizontalLayout {
+                    alignment: center;
+                    spacing: 16px;
+
+                    SecondaryButton {
+                        text: "Back";
+                        clicked => {
+                            root.current_step = 0;
+                        }
+                    }
+
+                    PrimaryButton {
+                        text: "Install";
+                        clicked => {
+                            root.current_step = 2;
+                            root.install(root.install_path);
+                        }
+                    }
+                }
+            }
+
+            // Step 2: Progress
+            if (root.current_step == 2): VerticalLayout {
+                alignment: center;
+                spacing: 24px;
+                padding-left: 80px;
+                padding-right: 80px;
+
+                Text {
+                    text: root.installing ? "Installing Oriv..." : (root.is_done ? "Installation Complete" : "Preparing...");
+                    font-size: 24px;
+                    font-weight: 600;
+                    color: Palette.text-primary;
+                    horizontal-alignment: center;
+                }
+
+                VerticalLayout {
+                    spacing: 8px;
+                    
+                    // Progress Bar Background
+                    Rectangle {
+                        height: 8px;
+                        border-radius: 4px;
+                        background: Palette.border;
+                        clip: true;
+
+                        // Progress Fill
+                        Rectangle {
+                            x: 0;
+                            width: parent.width * ((root.progress < 0.0) ? 0.0 : ((root.progress > 1.0) ? 1.0 : root.progress));
+                            height: 100%;
+                            border-radius: 4px;
+                            background: root.progress >= 1.0 ? Palette.success : Palette.primary;
+                            animate width {
+                                duration: 200ms;
+                                easing: ease-in-out;
+                            }
+                            animate background { duration: 300ms; }
+                        }
+                    }
+
+                    Text {
+                        text: root.status_text;
+                        font-size: 13px;
+                        color: Palette.text-secondary;
+                        horizontal-alignment: center;
+                    }
+                }
+
+                if (root.is_done): HorizontalLayout {
+                    alignment: center;
+                    spacing: 16px;
+                    padding-top: 20px;
+
+                    SecondaryButton {
+                        text: "View Log";
+                        clicked => {
+                            root.open_log();
+                        }
+                    }
+
+                    PrimaryButton {
+                        text: "Finish";
+                        clicked => {
+                            root.quit();
+                        }
+                    }
+                }
+            }
+            
+            // Step 3: Done (Merged into Step 2 for smoother flow, but kept as state if needed)
+             if (root.current_step == 3): VerticalLayout {
+                 // Logic handled in Step 2 for simplicity in this design
+             }
+        }
+    }
+}

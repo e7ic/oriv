@@ -42,3 +42,10 @@ winapi = { version = "0.3", features = ["shellscalingapi", "winuser"] }
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1"
+
+[profile.release]
+strip = true  # 自动剥离符号
+opt-level = "z"  # 优化体积
+lto = true  # 开启链接时优化
+codegen-units = 1  # 减少并行代码生成单元以提高优化效果
+panic = "abort"  # 禁用 panic unwind，减小体积
