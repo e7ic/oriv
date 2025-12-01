@@ -38,11 +38,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // 强制使用 Skia 渲染器以获得最佳字体质量
     // Skia 是 Google Chrome 使用的渲染引擎
-    unsafe {
-        std::env::set_var("SLINT_BACKEND", "winit-skia");
-    }
+    // 强制使用 Skia 渲染器以获得最佳字体质量
+    // Skia 是 Google Chrome 使用的渲染引擎
+    // unsafe {
+    //    std::env::set_var("SLINT_BACKEND", "winit-skia");
+    // }
 
     let ui = AppWindow::new()?;
+
+    #[cfg(target_os = "macos")]
+    ui.set_is_macos(true);
     
     // Create channel for logs
     let (log_sender, mut log_receiver) = tokio::sync::mpsc::channel(100);
@@ -95,7 +100,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         // 在 macOS 上配置原生标题栏样式
         // 注意：这需要在窗口创建后立即调用
-        configure_macos_titlebar(&ui);
+        // configure_macos_titlebar(&ui);
     }
 
     #[cfg(not(target_os = "macos"))]
@@ -130,6 +135,23 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let is_maximized = window.is_maximized();
             window.set_maximized(!is_maximized);
             !is_maximized  // 返回新的最大化状态
+        }
+    });
+
+    // 切换全屏
+    ui.on_toggle_fullscreen({
+        let ui_handle = ui.as_weak();
+        move || {
+            let ui = ui_handle.unwrap();
+            let window = ui.window();
+            window.with_winit_window(|winit_window| {
+                let is_fullscreen = winit_window.fullscreen().is_some();
+                if is_fullscreen {
+                    winit_window.set_fullscreen(None);
+                } else {
+                    winit_window.set_fullscreen(Some(i_slint_backend_winit::winit::window::Fullscreen::Borderless(None)));
+                }
+            });
         }
     });
 
@@ -316,6 +338,48 @@ async fn main() -> Result<(), Box<dyn Error>> {
     });
 
     // 切换代理
+    // 错误处理
+    ui.on_show_error({
+        let ui_handle = ui.as_weak();
+        move |msg| {
+            let ui = ui_handle.unwrap();
+            ui.set_error_message(msg);
+            ui.set_show_error_overlay(true);
+        }
+    });
+
+    ui.on_close_error({
+        let ui_handle = ui.as_weak();
+        move || {
+            let ui = ui_handle.unwrap();
+            ui.set_show_error_overlay(false);
+            ui.set_is_permission_error(false);
+        }
+    });
+
+    // 以管理员身份重启
+    ui.on_retry_as_admin(move || {
+        if let Ok(exe_path) = std::env::current_exe() {
+            println!("Relaunching as admin: {:?}", exe_path);
+            
+            #[cfg(target_os = "macos")]
+            {
+                let path = exe_path.to_string_lossy();
+                let escaped_path = path.replace("'", "'\\''");
+                let script = format!("do shell script \"'{}'\" with administrator privileges", escaped_path);
+                
+                let _ = std::process::Command::new("osascript")
+                    .arg("-e")
+                    .arg(script)
+                    .spawn();
+            }
+            
+            // Exit current instance
+            std::process::exit(0);
+        }
+    });
+
+    // 切换代理
     ui.on_toggle_proxy({
         let proxy_server = proxy_server.clone();
         let proxy_running = proxy_running.clone();
@@ -323,9 +387,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         
         move |enable: bool| {
             let mut running = proxy_running.lock().unwrap();
+            
             if enable && !*running {
                 let server = proxy_server.clone();
                 let ui = ui_handle.unwrap();
+                let ui_handle_clone = ui_handle.clone();
                 
                 // Read configuration from UI
                 let port_str = ui.get_http_port();
@@ -335,6 +401,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 tokio::spawn(async move {
                     if let Err(e) = server.start(port).await {
                         eprintln!("Proxy server error: {}", e);
+                        
+                        // Check if it's a permission error
+                        let is_permission_error = if let Some(io_err) = e.downcast_ref::<std::io::Error>() {
+                            io_err.kind() == std::io::ErrorKind::PermissionDenied
+                        } else {
+                            false
+                        };
+
+                        let error_msg = format!("启动代理服务器失败: {}", e);
+                        let _ = slint::invoke_from_event_loop(move || {
+                            if let Some(ui) = ui_handle_clone.upgrade() {
+                                ui.invoke_show_error(SharedString::from(error_msg));
+                                ui.set_is_permission_error(is_permission_error);
+                                ui.set_proxy_running(false);
+                            }
+                        });
                     }
                 });
                 println!("Proxy started on port {}", port);
@@ -373,16 +455,16 @@ fn update_backend_rules(server: &Arc<ProxyServer>, model: &Rc<VecModel<ProxyRule
 /// 配置 macOS 窗口的原生标题栏样式
 #[cfg(target_os = "macos")]
 fn configure_macos_titlebar(ui: &AppWindow) {
-    use i_slint_backend_winit::winit::platform::macos::WindowExtMacOS;
+    // use i_slint_backend_winit::winit::platform::macos::WindowExtMacOS;
 
-    ui.window().with_winit_window(|winit_window| {
+    ui.window().with_winit_window(|_winit_window| {
         // 设置标题栏为透明，允许内容延伸到标题栏区域
-        winit_window.set_titlebar_transparent(true);
+        // winit_window.set_titlebar_appears_transparent(true);
 
         // 隐藏标题文字（但保留按钮）
-        winit_window.set_title_hidden(true);
+        // winit_window.set_title_visibility(false);
 
         // 允许通过窗口背景拖动（补充自定义标题栏的拖动功能）
-        winit_window.set_movable_by_window_background(true);
+        // winit_window.set_movable_by_window_background(true);
     });
 }

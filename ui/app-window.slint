@@ -4,6 +4,7 @@ import { ProxyManager } from "./pages/proxy-manager/page.slint";
 import { ProxyRule } from "./pages/proxy-manager/components/rules.slint";
 import { CertInfo } from "./pages/proxy-manager/components/certificates.slint";
 import { LogEntry } from "./pages/proxy-manager/components/logs.slint";
+import "../assets/fonts/SourceHanSansSC-Regular.otf";
 
 export component AppWindow inherits Window {
     icon: @image-url("../assets/app-icon.png");
@@ -12,9 +13,9 @@ export component AppWindow inherits Window {
     preferred-height: 800px;
     min-width: 800px;
     min-height: 600px;
-    no-frame: true;  // 移除系统标题栏和边框
+    no-frame: !is-macos;  // macOS 使用原生标题栏，其他平台使用自定义无边框
     background: transparent;
-    default-font-family: "Kamerik 105";
+    default-font-family: "Source Han Sans SC";
 
     in-out property <int> counter: 42;
     callback request-increase-value();
@@ -22,6 +23,7 @@ export component AppWindow inherits Window {
     // 窗口控制回调
     callback minimize-window();
     callback maximize-window() -> bool;  // 返回是否最大化
+    callback toggle-fullscreen();
     callback close-window();
     callback start-drag-window();  // 开始拖动窗口
     callback start-resize-window(int);  // 开始调整窗口大小，参数：方向(0-7)
@@ -35,6 +37,14 @@ export component AppWindow inherits Window {
     // 主题相关
     in-out property <bool> dark-mode: false;
     callback toggle-theme();
+
+    // 错误处理
+    in-out property <string> error-message: "";
+    in-out property <bool> show-error-overlay: false;
+    in-out property <bool> is-permission-error: false;
+    callback show-error(string);
+    callback close-error();
+    callback retry-as-admin();
 
     // 颜色定义
     property <color> bg-color: dark-mode ? #1f2937 : #f3f4f6;
@@ -80,6 +90,15 @@ export component AppWindow inherits Window {
             width: 100%;
             height: 100%;
 
+            key-pressed(event) => {
+                if (root.is-macos && event.text == "f" && event.modifiers.control && event.modifiers.meta) {
+                    root.toggle-fullscreen();
+                    accept
+                } else {
+                    reject
+                }
+            }
+
             // Background TouchArea to clear focus
             TouchArea {
                 width: 100%;
@@ -95,7 +114,7 @@ export component AppWindow inherits Window {
                 width: 100%;
 
                 // Custom TitleBar
-                TitleBar {
+                if !root.is-macos : TitleBar {
                     title: root.title;
                     is-maximized <=> root.is-maximized;
                     is-macos: root.is-macos;
@@ -288,6 +307,68 @@ export component AppWindow inherits Window {
                 pointer-event(event) => {
                     if (event.kind == PointerEventKind.down && event.button == PointerEventButton.left) {
                         root.start-resize-window(5);
+                    }
+                }
+            }
+
+            // Error Overlay
+            if root.show-error-overlay : Rectangle {
+                background: #00000080;
+                TouchArea {
+                    clicked => {
+                        root.close-error();
+                    }
+                }
+                
+                Rectangle {
+                    width: 400px;
+                    height: 200px;
+                    background: white;
+                    border-radius: 12px;
+                    
+                    VerticalBox {
+                        padding: 24px;
+                        spacing: 16px;
+                        alignment: center;
+                        
+                        Text {
+                            text: "错误";
+                            font-size: 18px;
+                            font-weight: 600;
+                            color: #ef4444;
+                            horizontal-alignment: center;
+                        }
+                        
+                        Text {
+                            text: root.error-message;
+                            font-size: 14px;
+                            color: #374151;
+                            wrap: word-wrap;
+                            horizontal-alignment: center;
+                            vertical-stretch: 1;
+                        }
+                        
+                        HorizontalLayout {
+                            alignment: center;
+                            spacing: 16px;
+                            
+                            if root.is-permission-error : Button {
+                                text: "以管理员身份重启";
+                                height: 36px;
+                                clicked => {
+                                    root.retry-as-admin();
+                                }
+                            }
+                            
+                            Button {
+                                text: "关闭";
+                                primary: !root.is-permission-error;
+                                height: 36px;
+                                clicked => {
+                                    root.close-error();
+                                }
+                            }
+                        }
                     }
                 }
             }

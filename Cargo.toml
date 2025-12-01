@@ -8,7 +8,7 @@ description = "A Slint-based GUI application"
 [dependencies]
 # 启用 Skia 渲染器以获得更好的字体渲染质量
 # 注意：renderer-skia 仍在实验阶段，如果遇到问题可以换回 renderer-femtovg
-slint = { version = "1.14.1", features = ["backend-winit", "renderer-skia"] }
+slint = { version = "1.14.1", features = ["backend-winit", "renderer-femtovg"] }
 i-slint-backend-winit = "1.14.1"
 tokio = { version = "1", features = ["full"] }
 hyper = { version = "1", features = ["full"] }

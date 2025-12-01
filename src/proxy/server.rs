@@ -139,7 +139,14 @@ async fn proxy(
             for rule in rules.iter() {
                 if rule.enabled && rule.domain == *host {
                     println!("Matched rule: {} -> {}", rule.domain, rule.target);
-                    target_addr = Some(rule.target.clone());
+                    let target = rule.target.clone();
+                    target_addr = Some(if !target.is_empty() && target.chars().all(|c| c.is_numeric()) {
+                        format!("127.0.0.1:{}", target)
+                    } else if !target.is_empty() && !target.contains(':') {
+                        format!("{}:80", target)
+                    } else {
+                        target
+                    });
                     break;
                 }
             }

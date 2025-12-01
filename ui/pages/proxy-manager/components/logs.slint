@@ -123,6 +123,7 @@ export component RequestLogs inherits VerticalLayout {
         border-color: #e5e7eb;
         clip: true;
         ScrollView {
+            visible: root.logs.length > 0;
             viewport-height: (root.logs.length * 48px) + 32px;
             VerticalLayout {
                 padding-top: 16px;
@@ -136,6 +137,25 @@ export component RequestLogs inherits VerticalLayout {
                     status: log.status;
                     status-color: log.status-code >= 400 ? #ef4444 : (log.status-code >= 300 ? #eab308 : #10b981);
                 }
+            }
+        }
+
+        if root.logs.length == 0 : VerticalLayout {
+            alignment: center;
+            spacing: 8px;
+            
+            Text {
+                text: "暂无日志数据";
+                font-size: 14px;
+                color: #9ca3af;
+                horizontal-alignment: center;
+            }
+            
+            Text {
+                text: "发起请求后将在此处显示";
+                font-size: 12px;
+                color: #d1d5db;
+                horizontal-alignment: center;
             }
         }
     }
