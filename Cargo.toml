@@ -1,5 +1,5 @@
 [package]
-name = "oriv"
+name = "ovo"
 version = "0.1.0"
 edition = "2024"
 authors = ["Your Name"]
@@ -8,8 +8,8 @@ description = "A Slint-based GUI application"
 [dependencies]
 # 启用 Skia 渲染器以获得更好的字体渲染质量
 # 注意：renderer-skia 仍在实验阶段，如果遇到问题可以换回 renderer-femtovg
-slint = { version = "1.14.1", features = ["backend-winit", "renderer-femtovg"] }
-i-slint-backend-winit = "1.14.1"
+slint = { version = "1.15.0", features = ["backend-winit", "renderer-femtovg"] }
+i-slint-backend-winit = "1.15.0"
 tokio = { version = "1", features = ["full"] }
 hyper = { version = "1", features = ["full"] }
 http-body-util = "0.1"
@@ -21,10 +21,12 @@ time = { version = "0.3.44", features = ["formatting", "macros"] }
 rsa = "0.9.9"
 dirs = "6.0"
 rfd = "0.15"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 
 [package.metadata.bundle]
-name = "Oriv"
-identifier = "com.oriv.app"
+name = "Ovo"
+identifier = "com.ovo.app"
 icon = ["assets/app-icon.png"]
 version = "0.1.0"
 copyright = "Copyright (c) 2025"
@@ -34,7 +36,7 @@ long_description = "A cross-platform GUI application built with Slint framework"
 
 [build-dependencies]
 lucide-slint = "0.1.4"
-slint-build = "1.14.1"
+slint-build = "1.15.0"
 
 [target.'cfg(windows)'.dependencies]
 # Windows DPI 感知 API

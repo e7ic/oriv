@@ -4,11 +4,14 @@
 mod proxy;
 
 use std::error::Error;
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::rc::Rc;
 use i_slint_backend_winit::WinitWindowAccessor;
 use i_slint_backend_winit::winit::window::ResizeDirection;
 use slint::{Model, VecModel, SharedString};
+use serde::{Deserialize, Serialize};
 use proxy::server::ProxyServer;
 use proxy::server::Rule;
 use proxy::ca::CertificateAuthority;
@@ -17,6 +20,20 @@ mod ui {
     slint::include_modules!();
 }
 use ui::*;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct PersistedRule {
+    id: String,
+    domain: String,
+    target: String,
+    protocol: String,
+    enabled: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+struct RuleStore {
+    rules: Vec<PersistedRule>,
+}
 
 /// 设置 Windows DPI 感知以改善字体渲染
 #[cfg(target_os = "windows")]
@@ -109,6 +126,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // 注意：窗口装饰已通过 app-window.slint 中的 no-frame: true 移除
     }
 
+    ui.on_toggle_theme({
+        let ui_handle = ui.as_weak();
+        move || {
+            let ui = ui_handle.unwrap();
+            ui.set_dark_mode(!ui.get_dark_mode());
+        }
+    });
+
     ui.on_request_increase_value({
         let ui_handle = ui.as_weak();
         move || {
@@ -125,6 +150,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             ui.window().set_minimized(true);
         }
     });
+
+    ui.on_validate_target_port(|target| is_valid_port(&target));
 
     // 最大化/恢复窗口
     ui.on_maximize_window({
@@ -205,6 +232,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let rules_model = Rc::new(VecModel::default());
     ui.set_rules(rules_model.clone().into());
 
+    load_rules_into_model(&rules_model);
+    update_backend_rules(&proxy_server, &rules_model);
+
     let proxy_server_clone = proxy_server.clone();
     let rules_model_clone = rules_model.clone();
     ui.on_add_rule(move |domain, target, protocol| {
@@ -217,8 +247,41 @@ async fn main() -> Result<(), Box<dyn Error>> {
             enabled: true,
         };
         rules_model_clone.push(rule);
-        
+
         update_backend_rules(&proxy_server_clone, &rules_model_clone);
+        persist_rules(&rules_model_clone);
+    });
+
+    let proxy_server_clone = proxy_server.clone();
+    let rules_model_clone = rules_model.clone();
+    ui.on_update_rule(move |id, domain, target, protocol| {
+        let mut index_to_update = None;
+        let mut enabled = true;
+
+        for (i, rule) in rules_model_clone.iter().enumerate() {
+            if rule.id == id {
+                index_to_update = Some(i);
+                enabled = rule.enabled;
+                break;
+            }
+        }
+
+        if let Some(i) = index_to_update {
+            rules_model_clone.remove(i);
+            rules_model_clone.insert(
+                i,
+                ProxyRule {
+                    id,
+                    domain,
+                    target,
+                    protocol,
+                    enabled,
+                },
+            );
+
+            update_backend_rules(&proxy_server_clone, &rules_model_clone);
+            persist_rules(&rules_model_clone);
+        }
     });
 
     let proxy_server_clone = proxy_server.clone();
@@ -234,6 +297,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         if let Some(i) = index_to_remove {
             rules_model_clone.remove(i);
             update_backend_rules(&proxy_server_clone, &rules_model_clone);
+            persist_rules(&rules_model_clone);
         }
     });
 
@@ -322,7 +386,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         let task = rfd::AsyncFileDialog::new()
             .set_title("Export CA Certificate")
-            .set_file_name("Oriv_CA.crt")
+            .set_file_name("Ovo_CA.crt")
             .add_filter("Certificate", &["crt", "pem"])
             .save_file();
 
@@ -339,6 +403,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // 切换代理
     // 错误处理
+    // Hosts
+    let hosts_model = Rc::new(VecModel::default());
+    ui.set_hosts(hosts_model.clone().into());
+
+    if let Err(e) = load_hosts_entries(&hosts_model) {
+        eprintln!("Failed to load hosts file: {}", e);
+    }
+
+    let hosts_model_clone = hosts_model.clone();
+    ui.on_refresh_hosts(move || {
+        if let Err(e) = load_hosts_entries(&hosts_model_clone) {
+            eprintln!("Failed to refresh hosts file: {}", e);
+        }
+    });
+
     ui.on_show_error({
         let ui_handle = ui.as_weak();
         move |msg| {
@@ -394,12 +473,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 let ui_handle_clone = ui_handle.clone();
                 
                 // Read configuration from UI
-                let port_str = ui.get_http_port();
-                let port = port_str.parse::<u16>().unwrap_or(8080);
+                let http_port = ui.get_http_port().parse::<u16>().unwrap_or(80);
+                let https_port = ui.get_https_port().parse::<u16>().unwrap_or(443);
+                let ports = vec![http_port, https_port];
                 
                 *running = true;
                 tokio::spawn(async move {
-                    if let Err(e) = server.start(port).await {
+                    if let Err(e) = server.start(ports).await {
                         eprintln!("Proxy server error: {}", e);
                         
                         // Check if it's a permission error
@@ -419,7 +499,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         });
                     }
                 });
-                println!("Proxy started on port {}", port);
+                println!("Proxy started on ports {}, {}", http_port, https_port);
             } else if !enable && *running {
                 proxy_server.stop();
                 *running = false;
@@ -453,6 +533,108 @@ fn update_backend_rules(server: &Arc<ProxyServer>, model: &Rc<VecModel<ProxyRule
 }
 
 /// 配置 macOS 窗口的原生标题栏样式
+fn app_data_dir() -> PathBuf {
+    if let Some(mut dir) = dirs::config_dir() {
+        dir.push("ovo");
+        return dir;
+    }
+
+    if let Some(mut dir) = dirs::home_dir() {
+        dir.push(".ovo");
+        return dir;
+    }
+
+    PathBuf::from(".")
+}
+
+fn rules_store_path() -> PathBuf {
+    app_data_dir().join("rules.json")
+}
+
+fn load_rules_store() -> RuleStore {
+    let path = rules_store_path();
+    if !path.exists() {
+        return RuleStore::default();
+    }
+
+    match fs::read_to_string(&path) {
+        Ok(content) => match serde_json::from_str::<RuleStore>(&content) {
+            Ok(store) => store,
+            Err(err) => {
+                eprintln!("Failed to parse rules store {:?}: {}", path, err);
+                RuleStore::default()
+            }
+        },
+        Err(err) => {
+            eprintln!("Failed to read rules store {:?}: {}", path, err);
+            RuleStore::default()
+        }
+    }
+}
+
+fn load_rules_into_model(model: &Rc<VecModel<ProxyRule>>) {
+    let store = load_rules_store();
+
+    while model.row_count() > 0 {
+        model.remove(0);
+    }
+
+    for rule in store.rules {
+        model.push(ProxyRule {
+            id: SharedString::from(rule.id),
+            domain: SharedString::from(rule.domain),
+            target: SharedString::from(rule.target),
+            protocol: SharedString::from(rule.protocol),
+            enabled: rule.enabled,
+        });
+    }
+}
+
+fn persist_rules(model: &Rc<VecModel<ProxyRule>>) {
+    let mut rules = Vec::new();
+    for rule in model.iter() {
+        rules.push(PersistedRule {
+            id: rule.id.to_string(),
+            domain: rule.domain.to_string(),
+            target: rule.target.to_string(),
+            protocol: rule.protocol.to_string(),
+            enabled: rule.enabled,
+        });
+    }
+
+    let store = RuleStore { rules };
+    let path = rules_store_path();
+
+    if let Some(dir) = path.parent() {
+        if let Err(err) = fs::create_dir_all(dir) {
+            eprintln!("Failed to create rules directory {:?}: {}", dir, err);
+            return;
+        }
+    }
+
+    match serde_json::to_string_pretty(&store) {
+        Ok(content) => {
+            if let Err(err) = fs::write(&path, content) {
+                eprintln!("Failed to write rules store {:?}: {}", path, err);
+            }
+        }
+        Err(err) => {
+            eprintln!("Failed to serialize rules store {:?}: {}", path, err);
+        }
+    }
+}
+
+fn is_valid_port(target: &str) -> bool {
+    if target.is_empty() {
+        return false;
+    }
+
+    match target.parse::<u16>() {
+        Ok(port) => port != 0,
+        Err(_) => false,
+    }
+}
+
 #[cfg(target_os = "macos")]
 fn configure_macos_titlebar(ui: &AppWindow) {
     // use i_slint_backend_winit::winit::platform::macos::WindowExtMacOS;
@@ -467,4 +649,55 @@ fn configure_macos_titlebar(ui: &AppWindow) {
         // 允许通过窗口背景拖动（补充自定义标题栏的拖动功能）
         // winit_window.set_movable_by_window_background(true);
     });
+}
+
+fn hosts_file_path() -> &'static str {
+    #[cfg(target_os = "windows")]
+    {
+        "C:\\Windows\\System32\\drivers\\etc\\hosts"
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        "/etc/hosts"
+    }
+}
+
+fn load_hosts_entries(model: &Rc<VecModel<HostEntry>>) -> Result<(), Box<dyn Error>> {
+    let path = hosts_file_path();
+    let content = fs::read_to_string(Path::new(path))?;
+
+    while model.row_count() > 0 {
+        model.remove(0);
+    }
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+
+        let without_comment = trimmed.split('#').next().unwrap_or("").trim();
+        if without_comment.is_empty() {
+            continue;
+        }
+
+        let mut segments = without_comment.split_whitespace();
+        let address = match segments.next() {
+            Some(addr) => addr,
+            None => continue,
+        };
+
+        let hostnames: Vec<&str> = segments.collect();
+        if hostnames.is_empty() {
+            continue;
+        }
+
+        model.push(HostEntry {
+            address: SharedString::from(address),
+            hostnames: SharedString::from(hostnames.join(" ")),
+        });
+    }
+
+    Ok(())
 }

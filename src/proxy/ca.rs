@@ -39,8 +39,8 @@ impl CertificateAuthority {
     pub fn generate_ca_cert(&self) -> Result<CaInfo, Box<dyn std::error::Error>> {
         let mut params = CertificateParams::default();
         let mut dn = DistinguishedName::new();
-        dn.push(DnType::CommonName, "Oriv Self-Signed CA");
-        dn.push(DnType::OrganizationName, "Oriv Proxy");
+        dn.push(DnType::CommonName, "Ovo Self-Signed CA");
+        dn.push(DnType::OrganizationName, "Ovo Proxy");
         params.distinguished_name = dn;
         params.is_ca = rcgen::IsCa::Ca(rcgen::BasicConstraints::Unconstrained);
         params.key_usages = vec![
@@ -71,9 +71,9 @@ impl CertificateAuthority {
 
         Ok(CaInfo {
             id: "ca-root".to_string(),
-            domain: "Oriv Root CA".to_string(),
+            domain: "Ovo Root CA".to_string(),
             type_: "自签名".to_string(),
-            issuer: "Oriv Proxy".to_string(),
+            issuer: "Ovo Proxy".to_string(),
             validity: format!("{} 至 {}", 
                 now.date(), 
                 not_after.date()
@@ -95,9 +95,9 @@ impl CertificateAuthority {
         
         Some(CaInfo {
             id: "ca-root".to_string(),
-            domain: "Oriv Root CA".to_string(),
+            domain: "Ovo Root CA".to_string(),
             type_: "自签名".to_string(),
-            issuer: "Oriv Proxy".to_string(),
+            issuer: "Ovo Proxy".to_string(),
             validity: "已安装".to_string(), // TODO: Parse actual validity
         })
     }

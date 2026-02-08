@@ -22,6 +22,7 @@ component RuleItem inherits Rectangle {
     in property <string> protocol;
     in property <bool> enabled;
     callback toggle(bool);
+    callback edit();
     callback delete();
     height: 72px;
     background: white;
@@ -89,6 +90,15 @@ component RuleItem inherits Rectangle {
         HorizontalLayout {
             spacing: 16px;
             alignment: end;
+
+            Button {
+                text: "编辑";
+                outline: true;
+                clicked => {
+                    root.edit();
+                }
+                y: (parent.height - self.height) / 2;
+            }
             
             // Status Toggle
             Button {
@@ -114,12 +124,20 @@ export component ProxyRules inherits VerticalLayout {
     alignment: start;
     in property <[ProxyRule]> rules;
     callback add-rule(string, string, string); // domain, target, protocol
+    callback update-rule(string, string, string, string); // id, domain, target, protocol
     callback remove-rule(string); // id
+    callback validate-target-port(string) -> bool;
 
-    // Local properties for inputs
-    property <string> new-domain: "";
-    property <string> new-target: "";
-    property <string> new-protocol: "HTTP";
+    // Local properties for inputs (Slint 1.15: struct field two-way bindings)
+    in-out property <ProxyRule> draft-rule: {
+        id: "",
+        domain: "",
+        target: "",
+        protocol: "HTTP",
+        enabled: true,
+    };
+    in-out property <string> editing-rule-id: "";
+    in-out property <string> validation-error: "";
 
     // Add Rule Section
     Rectangle {
@@ -144,6 +162,12 @@ export component ProxyRules inherits VerticalLayout {
                     color: #6b7280;
                     font-size: 14px;
                 }
+
+                if root.editing-rule-id != "": Text {
+                    text: "正在编辑规则";
+                    color: #b45309;
+                    font-size: 13px;
+                }
             }
 
             HorizontalLayout {
@@ -162,7 +186,7 @@ export component ProxyRules inherits VerticalLayout {
 
                     Input {
                         placeholder: "local.example.com";
-                        text <=> root.new-domain;
+                        text <=> root.draft-rule.domain;
                     }
                 }
 
@@ -179,7 +203,16 @@ export component ProxyRules inherits VerticalLayout {
 
                     Input {
                         placeholder: "3000";
-                        text <=> root.new-target;
+                        text <=> root.draft-rule.target;
+                        edited(text) => {
+                            if text == "" {
+                                root.validation-error = "";
+                            } else if !root.validate-target-port(text) {
+                                root.validation-error = "目标端口必须是 1-65535 的数字";
+                            } else {
+                                root.validation-error = "";
+                            }
+                        }
                     }
                 }
 
@@ -195,31 +228,66 @@ export component ProxyRules inherits VerticalLayout {
                     }
 
                     Select {
-                        value: root.new-protocol;
+                        value <=> root.draft-rule.protocol;
                         options: ["HTTP", "HTTPS"];
                         selected(val) => {
-                            root.new-protocol = val;
+                            root.draft-rule.protocol = val;
                         }
                     }
                 }
             }
 
-            // Add Button
-            Button {
-                text: "添加规则";
-                height: 40px;
-                clicked => {
-                    if (root.new-domain != "" && root.new-target != "") {
-                        root.add-rule(root.new-domain, root.new-target, root.new-protocol);
-                        root.new-domain = "";
-                        root.new-target = "";
+            if root.validation-error != "": Text {
+                text: root.validation-error;
+                color: #dc2626;
+                font-size: 13px;
+            }
+
+            // Save/Add Buttons
+            HorizontalLayout {
+                spacing: 12px;
+
+                Button {
+                    text: root.editing-rule-id == "" ? "添加规则" : "保存修改";
+                    height: 40px;
+                    clicked => {
+                        if (root.draft-rule.domain != "" && root.draft-rule.target != "") {
+                            if !root.validate-target-port(root.draft-rule.target) {
+                                root.validation-error = "目标端口必须是 1-65535 的数字";
+                                return;
+                            }
+
+                            if root.editing-rule-id == "" {
+                                root.add-rule(root.draft-rule.domain, root.draft-rule.target, root.draft-rule.protocol);
+                            } else {
+                                root.update-rule(root.editing-rule-id, root.draft-rule.domain, root.draft-rule.target, root.draft-rule.protocol);
+                            }
+                            root.validation-error = "";
+                            root.editing-rule-id = "";
+                            root.draft-rule.domain = "";
+                            root.draft-rule.target = "";
+                            root.draft-rule.protocol = "HTTP";
+                        }
+                    }
+                    PlusIcon {
+                        width: 16px;
+                        height: 16px;
+                        colorize: white;
+                        y: (parent.height - self.height) / 2;
                     }
                 }
-                PlusIcon {
-                    width: 16px;
-                    height: 16px;
-                    colorize: white;
-                    y: (parent.height - self.height) / 2;
+
+                if root.editing-rule-id != "": Button {
+                    text: "取消编辑";
+                    outline: true;
+                    height: 40px;
+                    clicked => {
+                        root.validation-error = "";
+                        root.editing-rule-id = "";
+                        root.draft-rule.domain = "";
+                        root.draft-rule.target = "";
+                        root.draft-rule.protocol = "HTTP";
+                    }
                 }
             }
         }
@@ -257,6 +325,13 @@ export component ProxyRules inherits VerticalLayout {
                     target: rule.target;
                     protocol: rule.protocol;
                     enabled: rule.enabled;
+                    edit => {
+                        root.validation-error = "";
+                        root.editing-rule-id = rule.id;
+                        root.draft-rule.domain = rule.domain;
+                        root.draft-rule.target = rule.target;
+                        root.draft-rule.protocol = rule.protocol;
+                    }
                     delete => {
                         root.remove-rule(rule.id);
                     }

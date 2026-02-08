@@ -1,7 +1,7 @@
 import { ChevronDownIcon } from "@lucide";
 
 export component Select inherits Rectangle {
-    in property <string> value;
+    in-out property <string> value;
     in property <[string]> options;
     callback selected(string);
     height: 36px;
@@ -59,6 +59,7 @@ export component Select inherits Rectangle {
 
                     touch := TouchArea {
                         clicked => {
+                            root.value = option;
                             root.selected(option);
                             popup.close();
                         }

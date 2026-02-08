@@ -5,19 +5,22 @@ import { Proxies } from "./components/proxies.slint";
 import { ProxyRules, ProxyRule } from "./components/rules.slint";
 import { SSLCertificates, CertInfo } from "./components/certificates.slint";
 import { RequestLogs, LogEntry } from "./components/logs.slint";
+import { HostsViewer, HostEntry } from "./components/hosts.slint";
 
 export component ProxyManager inherits VerticalLayout {
     padding: 32px;
     spacing: 24px;
-    in-out property <int> active-tab: 0; // 0: Settings, 1: Rules, 2: SSL, 3: Logs
+    in-out property <int> active-tab: 0; // 0: Settings, 1: Rules, 2: SSL, 3: Logs, 4: Hosts
     in property <bool> proxy-running: false;
-    in-out property <string> http-port: "8080";
-    in-out property <string> https-port: "8443";
-    
+    in-out property <string> http-port: "80";
+    in-out property <string> https-port: "443";
+
     // Rules
     in property <[ProxyRule]> rules;
     callback add-rule(string, string, string);
+    callback update-rule(string, string, string, string);
     callback remove-rule(string);
+    callback validate-target-port(string) -> bool;
 
     // Certificates
     in property <[CertInfo]> certificates;
@@ -29,6 +32,11 @@ export component ProxyManager inherits VerticalLayout {
     // Logs
     in property <[LogEntry]> logs;
     callback clear-logs();
+
+    // Hosts
+    in property <[HostEntry]> hosts;
+    callback refresh-hosts();
+
     callback toggle-proxy(bool);
 
     // Header Section
@@ -46,7 +54,7 @@ export component ProxyManager inherits VerticalLayout {
             }
 
             Text {
-                text: "管理本地域名代理、CORS 设置和 HTTPS 证书";
+                text: "管理本地域名代理、CORS 配置和 HTTPS 证书";
                 color: #6b7280;
                 font-size: 14px;
             }
@@ -55,7 +63,7 @@ export component ProxyManager inherits VerticalLayout {
         HorizontalLayout {
             spacing: 16px;
             alignment: end;
-            
+
             // Status Badge
             Rectangle {
                 width: 60px;
@@ -103,8 +111,8 @@ export component ProxyManager inherits VerticalLayout {
         height: 40px;
         background: #f3f4f6;
         border-radius: self.height / 2;
-        width: 500px; // Fixed width for tabs container
-        
+        width: 620px;
+
         HorizontalLayout {
             padding: 4px;
             spacing: 4px;
@@ -139,6 +147,14 @@ export component ProxyManager inherits VerticalLayout {
                     root.active-tab = 3;
                 }
             }
+
+            TabButton {
+                text: "Hosts";
+                active: root.active-tab == 4;
+                clicked => {
+                    root.active-tab = 4;
+                }
+            }
         }
     }
 
@@ -159,8 +175,14 @@ export component ProxyManager inherits VerticalLayout {
                 add-rule(d, t, p) => {
                     root.add-rule(d, t, p);
                 }
+                update-rule(id, d, t, p) => {
+                    root.update-rule(id, d, t, p);
+                }
                 remove-rule(id) => {
                     root.remove-rule(id);
+                }
+                validate-target-port(target) => {
+                    return root.validate-target-port(target);
                 }
             }
 
@@ -186,6 +208,14 @@ export component ProxyManager inherits VerticalLayout {
                 logs: root.logs;
                 clear-logs => {
                     root.clear-logs();
+                }
+            }
+
+            // Tab 4: Hosts
+            if root.active-tab == 4: HostsViewer {
+                hosts: root.hosts;
+                refresh-hosts => {
+                    root.refresh-hosts();
                 }
             }
         }

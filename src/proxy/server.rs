@@ -1,5 +1,5 @@
 use std::net::SocketAddr;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 use tokio::sync::mpsc;
 
 use bytes::Bytes;
@@ -9,7 +9,7 @@ use hyper::service::service_fn;
 use hyper::{Method, Request, Response, StatusCode};
 use hyper_util::rt::TokioIo;
 use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::Notify;
+use tokio::sync::watch;
 
 #[derive(Clone, Debug)]
 pub struct Rule {
@@ -31,7 +31,7 @@ pub struct LogEvent {
 }
 
 pub struct ProxyServer {
-    stop_signal: Arc<Notify>,
+    shutdown_tx: Arc<Mutex<Option<watch::Sender<bool>>>>,
     rules: Arc<RwLock<Vec<Rule>>>,
     log_sender: mpsc::Sender<LogEvent>,
 }
@@ -39,7 +39,7 @@ pub struct ProxyServer {
 impl ProxyServer {
     pub fn new(log_sender: mpsc::Sender<LogEvent>) -> Self {
         Self {
-            stop_signal: Arc::new(Notify::new()),
+            shutdown_tx: Arc::new(Mutex::new(None)),
             rules: Arc::new(RwLock::new(Vec::new())),
             log_sender,
         }
@@ -52,67 +52,117 @@ impl ProxyServer {
         }
     }
 
-    pub async fn start(&self, port: u16) -> Result<(), Box<dyn std::error::Error>> {
-        let addr = SocketAddr::from(([127, 0, 0, 1], port));
-        let listener = TcpListener::bind(addr).await?;
-        println!("Proxy server listening on http://{}", addr);
-        
-        // Send startup log
+    pub async fn start(&self, ports: Vec<u16>) -> Result<(), Box<dyn std::error::Error>> {
+        let mut unique_ports = ports;
+        unique_ports.sort_unstable();
+        unique_ports.dedup();
+
+        if unique_ports.is_empty() {
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "No proxy ports provided").into());
+        }
+
+        let mut listeners = Vec::new();
+        for port in unique_ports {
+            let addr = SocketAddr::from(([127, 0, 0, 1], port));
+            let listener = TcpListener::bind(addr).await?;
+            listeners.push((port, addr, listener));
+        }
+
+        let (shutdown_tx, shutdown_rx) = watch::channel(false);
+        if let Ok(mut shutdown_guard) = self.shutdown_tx.lock() {
+            if let Some(previous_tx) = shutdown_guard.take() {
+                let _ = previous_tx.send(true);
+            }
+            *shutdown_guard = Some(shutdown_tx);
+        }
+
+        let mut listener_tasks = Vec::new();
+        for (port, addr, listener) in listeners {
+            println!("Proxy server listening on http://{}", addr);
+
+            let _ = self.log_sender.send(LogEvent {
+                time: time::OffsetDateTime::now_utc().format(&time::format_description::parse("[hour]:[minute]:[second]")?).unwrap(),
+                method: "SYSTEM".to_string(),
+                protocol: "SYSTEM".to_string(),
+                url: format!("Proxy server started on port {}", port),
+                status: "OK".to_string(),
+                status_code: 200,
+            }).await;
+
+            let mut stop_signal = shutdown_rx.clone();
+            let rules = self.rules.clone();
+            let log_sender = self.log_sender.clone();
+
+            let task = tokio::spawn(async move {
+                loop {
+                    tokio::select! {
+                        changed = stop_signal.changed() => {
+                            match changed {
+                                Ok(()) => {
+                                    if *stop_signal.borrow() {
+                                        println!("Proxy listener on port {} stopping...", port);
+                                        break;
+                                    }
+                                }
+                                Err(_) => {
+                                    println!("Proxy listener on port {} stopping...", port);
+                                    break;
+                                }
+                            }
+                        }
+                        result = listener.accept() => {
+                            match result {
+                                Ok((stream, _)) => {
+                                    let io = TokioIo::new(stream);
+                                    let rules = rules.clone();
+                                    let log_sender = log_sender.clone();
+                                    tokio::task::spawn(async move {
+                                        if let Err(err) = http1::Builder::new()
+                                            .preserve_header_case(true)
+                                            .title_case_headers(true)
+                                            .serve_connection(io, service_fn(move |req| proxy(req, rules.clone(), log_sender.clone())))
+                                            .with_upgrades()
+                                            .await
+                                        {
+                                            println!("Failed to serve connection: {:?}", err);
+                                        }
+                                    });
+                                }
+                                Err(e) => println!("Error accepting connection: {}", e),
+                            }
+                        }
+                    }
+                }
+            });
+
+            listener_tasks.push(task);
+        }
+
+        let mut shutdown_main = shutdown_rx.clone();
+        let _ = shutdown_main.changed().await;
+        println!("Proxy server stopping...");
         let _ = self.log_sender.send(LogEvent {
             time: time::OffsetDateTime::now_utc().format(&time::format_description::parse("[hour]:[minute]:[second]")?).unwrap(),
             method: "SYSTEM".to_string(),
             protocol: "SYSTEM".to_string(),
-            url: format!("Proxy server started on port {}", port),
+            url: "Proxy server stopped".to_string(),
             status: "OK".to_string(),
             status_code: 200,
         }).await;
 
-        let stop_signal = self.stop_signal.clone();
-        let rules = self.rules.clone();
-        let log_sender = self.log_sender.clone();
-
-        loop {
-            tokio::select! {
-                _ = stop_signal.notified() => {
-                    println!("Proxy server stopping...");
-                    let _ = self.log_sender.send(LogEvent {
-                        time: time::OffsetDateTime::now_utc().format(&time::format_description::parse("[hour]:[minute]:[second]")?).unwrap(),
-                        method: "SYSTEM".to_string(),
-                        protocol: "SYSTEM".to_string(),
-                        url: "Proxy server stopped".to_string(),
-                        status: "OK".to_string(),
-                        status_code: 200,
-                    }).await;
-                    break;
-                }
-                result = listener.accept() => {
-                    match result {
-                        Ok((stream, _)) => {
-                            let io = TokioIo::new(stream);
-                            let rules = rules.clone();
-                            let log_sender = log_sender.clone();
-                            tokio::task::spawn(async move {
-                                if let Err(err) = http1::Builder::new()
-                                    .preserve_header_case(true)
-                                    .title_case_headers(true)
-                                    .serve_connection(io, service_fn(move |req| proxy(req, rules.clone(), log_sender.clone())))
-                                    .with_upgrades()
-                                    .await
-                                {
-                                    println!("Failed to serve connection: {:?}", err);
-                                }
-                            });
-                        }
-                        Err(e) => println!("Error accepting connection: {}", e),
-                    }
-                }
-            }
+        for task in listener_tasks {
+            let _ = task.await;
         }
+
         Ok(())
     }
 
     pub fn stop(&self) {
-        self.stop_signal.notify_waiters();
+        if let Ok(mut shutdown_guard) = self.shutdown_tx.lock()
+            && let Some(tx) = shutdown_guard.take()
+        {
+            let _ = tx.send(true);
+        }
     }
 }
 
