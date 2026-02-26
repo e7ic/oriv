@@ -5,6 +5,7 @@ import { ProxyRule } from "./pages/proxy-manager/components/rules.slint";
 import { CertInfo } from "./pages/proxy-manager/components/certificates.slint";
 import { LogEntry } from "./pages/proxy-manager/components/logs.slint";
 import { HostEntry } from "./pages/proxy-manager/components/hosts.slint";
+import { ApiTester, ApiHistoryItem } from "./pages/api-tester/page.slint";
 import "../assets/fonts/SourceHanSansSC-Regular.otf";
 
 export component AppWindow inherits Window {
@@ -86,6 +87,19 @@ export component AppWindow inherits Window {
     in property <[HostEntry]> hosts;
     callback refresh-hosts();
 
+    // 页面切换
+    in-out property <int> active-tab: 0;
+
+    // API 测试器
+    in-out property <string> api-response-body;
+    in-out property <string> api-response-headers;
+    in-out property <int> api-response-status;
+    in-out property <bool> api-is-loading: false;
+    in property <[ApiHistoryItem]> api-history;
+    callback api-send-request(string, string, string, string);
+    callback api-clear-history();
+    callback api-select-history(int);
+
     Rectangle {
         width: 100%;
         height: 100%;
@@ -149,10 +163,10 @@ export component AppWindow inherits Window {
                 HorizontalLayout {
                     // Sidebar
                     Sidebar {
-                        active-index: 0;
+                        active-index <=> root.active-tab;
                         dark-mode <=> root.dark-mode;
                         navigate(index) => {
-                            self.active-index = index;
+                            root.active-tab = index;
                         }
                         toggle-dark-mode => {
                             root.toggle-theme();
@@ -161,11 +175,9 @@ export component AppWindow inherits Window {
 
                     // Right Side Content
                     Rectangle {
-                        background: white; // Main content background
-                        
-                        // Currently only showing Proxy Manager for demo
-                        // In a real app, we would switch based on active-index
-                        ProxyManager {
+                        background: white;
+
+                        if root.active-tab == 0: ProxyManager {
                             proxy-running: root.proxy-running;
                             http-port <=> root.http-port;
                             https-port <=> root.https-port;
@@ -205,6 +217,23 @@ export component AppWindow inherits Window {
                             }
                             refresh-hosts => {
                                 root.refresh-hosts();
+                            }
+                        }
+
+                        if root.active-tab == 1: ApiTester {
+                            response-body: root.api-response-body;
+                            response-headers: root.api-response-headers;
+                            response-status: root.api-response-status;
+                            is-loading: root.api-is-loading;
+                            history: root.api-history;
+                            send-request(method, url, headers, body) => {
+                                root.api-send-request(method, url, headers, body);
+                            }
+                            clear-history => {
+                                root.api-clear-history();
+                            }
+                            select-history(index) => {
+                                root.api-select-history(index);
                             }
                         }
                     }

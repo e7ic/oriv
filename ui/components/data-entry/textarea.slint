@@ -1,0 +1,45 @@
+export component Textarea inherits Rectangle {
+    in-out property <string> text;
+    in property <string> placeholder;
+    in property <bool> readonly: false;
+    in property <bool> monospace: false;
+    in property <length> font-size: 13px;
+    in property <length> preferred-min-height: 120px;
+
+    height: root.preferred-min-height;
+    background: root.readonly ? #f9fafb : #f3f4f6;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: input.has-focus ? #2563eb : transparent;
+    clip: true;
+
+    flickable := Flickable {
+        x: 0; y: 0;
+        width: parent.width;
+        height: parent.height;
+        viewport-height: input.preferred-height + 24px;
+
+        input := TextInput {
+            x: 12px;
+            y: 12px;
+            width: parent.width - 24px;
+            color: #374151;
+            font-size: root.font-size;
+            font-family: root.monospace ? "Consolas, monospace" : "";
+            single-line: false;
+            wrap: word-wrap;
+            read-only: root.readonly;
+            text <=> root.text;
+        }
+    }
+
+    // Placeholder
+    if root.text == "" && root.placeholder != "": Text {
+        x: 12px;
+        y: 12px;
+        text: root.placeholder;
+        color: #9ca3af;
+        font-size: root.font-size;
+        font-family: root.monospace ? "Consolas, monospace" : "";
+    }
+}

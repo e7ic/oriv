@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__figma__get_metadata",
+      "mcp__figma__get_screenshot",
+      "mcp__figma__get_design_context",
+      "Bash(if not exist \"E:\\\\E7ic\\\\ovo\\\\ui\\\\pages\\\\api-tester\" mkdir:*)",
+      "Bash(cmd /c:*)",
+      "Bash(cargo build:*)"
+    ]
+  }
+}

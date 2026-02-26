@@ -1,0 +1,202 @@
+import { ScrollView } from "std-widgets.slint";
+import { Button, Card, Tag, Input, Select, Textarea, TabButton } from "../../components/index.slint";
+import { SendIcon, Trash2Icon, ClockIcon } from "@lucide";
+
+export struct ApiHistoryItem {
+    id: string,
+    method: string,
+    url: string,
+    timestamp: string,
+    status-code: int,
+}
+
+export component ApiTester inherits VerticalLayout {
+    in-out property <string> request-method: "GET";
+    in-out property <string> request-url;
+    in-out property <string> request-headers;
+    in-out property <string> request-body;
+    in property <string> response-body;
+    in property <string> response-headers;
+    in property <int> response-status;
+    in property <bool> is-loading: false;
+    in property <[ApiHistoryItem]> history;
+
+    property <int> request-tab: 0;
+    property <int> response-tab: 0;
+
+    callback send-request(string, string, string, string);
+    callback clear-history();
+    callback select-history(int);
+
+    padding: 32px;
+    spacing: 24px;
+
+    // Header
+    VerticalLayout {
+        spacing: 4px;
+        Text { text: "API 测试器"; font-size: 24px; font-weight: 700; color: #111827; }
+        Text { text: "发送 HTTP 请求并查看响应"; font-size: 14px; color: #6b7280; }
+    }
+
+    // Main two-column layout
+    HorizontalLayout {
+        spacing: 24px;
+        vertical-stretch: 1;
+
+        // Left column
+        VerticalLayout {
+            horizontal-stretch: 2;
+            spacing: 16px;
+
+            // Request Card
+            Card {
+                title: "请求";
+                vertical-stretch: 1;
+                VerticalLayout {
+                    spacing: 12px;
+                    // Method + URL + Send
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Select {
+                            width: 120px;
+                            value <=> root.request-method;
+                            options: ["GET", "POST", "PUT", "DELETE", "PATCH"];
+                        }
+                        Input {
+                            horizontal-stretch: 1;
+                            text <=> root.request-url;
+                            placeholder: "输入请求 URL...";
+                        }
+                        Button {
+                            text: root.is-loading ? "发送中..." : "发送";
+                            primary: true;
+                            SendIcon { width: 14px; height: 14px; colorize: white; y: (parent.height - self.height) / 2; }
+                            clicked => {
+                                root.send-request(root.request-method, root.request-url, root.request-headers, root.request-body);
+                            }
+                        }
+                    }
+                    // Request tabs
+                    HorizontalLayout {
+                        spacing: 4px;
+                        TabButton { text: "请求头"; active: root.request-tab == 0; clicked => { root.request-tab = 0; } }
+                        TabButton { text: "请求体"; active: root.request-tab == 1; clicked => { root.request-tab = 1; } }
+                    }
+                    if root.request-tab == 0: Textarea {
+                        text <=> root.request-headers;
+                        placeholder: "JSON 格式的请求头...";
+                        monospace: true;
+                        preferred-min-height: 100px;
+                    }
+                    if root.request-tab == 1: Textarea {
+                        text <=> root.request-body;
+                        placeholder: "请求体内容...";
+                        monospace: true;
+                        preferred-min-height: 100px;
+                    }
+                }
+            }
+
+            // Response Card
+            Card {
+                title: "响应";
+                description: root.response-status > 0 ? "状态码: " + root.response-status : "";
+                vertical-stretch: 1;
+                VerticalLayout {
+                    spacing: 12px;
+                    if root.response-status > 0: HorizontalLayout {
+                        spacing: 8px;
+                        Tag {
+                            text: root.response-status < 300 ? "成功" : "错误";
+                            base-color: root.response-status < 300 ? #dcfce7 : #fee2e2;
+                            text-color: root.response-status < 300 ? #166534 : #991b1b;
+                        }
+                        Tag { text: root.response-status; base-color: #e0e7ff; text-color: #3730a3; }
+                    }
+                    HorizontalLayout {
+                        spacing: 4px;
+                        TabButton { text: "响应体"; active: root.response-tab == 0; clicked => { root.response-tab = 0; } }
+                        TabButton { text: "响应头"; active: root.response-tab == 1; clicked => { root.response-tab = 1; } }
+                    }
+                    if root.response-tab == 0: Textarea {
+                        text: root.response-body;
+                        readonly: true;
+                        monospace: true;
+                        placeholder: "响应内容将显示在这里...";
+                        preferred-min-height: 120px;
+                    }
+                    if root.response-tab == 1: Textarea {
+                        text: root.response-headers;
+                        readonly: true;
+                        monospace: true;
+                        placeholder: "响应头将显示在这里...";
+                        preferred-min-height: 120px;
+                    }
+                }
+            }
+        }
+
+        // Right column (history)
+        Card {
+            horizontal-stretch: 1;
+            title: "历史记录";
+            VerticalLayout {
+                spacing: 8px;
+                HorizontalLayout {
+                    alignment: end;
+                    Button {
+                        text: "清空";
+                        danger: true;
+                        Trash2Icon { width: 14px; height: 14px; colorize: #ef4444; y: (parent.height - self.height) / 2; }
+                        clicked => { root.clear-history(); }
+                    }
+                }
+                ScrollView {
+                    vertical-stretch: 1;
+                    VerticalLayout {
+                        spacing: 4px;
+                        for item[index] in root.history: Rectangle {
+                            height: 64px;
+                            border-radius: 6px;
+                            background: touch.has-hover ? #f3f4f6 : transparent;
+                            touch := TouchArea { clicked => { root.select-history(index); } }
+                            HorizontalLayout {
+                                padding: 8px;
+                                padding-left: 12px;
+                                padding-right: 12px;
+                                spacing: 8px;
+                                alignment: start;
+                                Tag {
+                                    text: item.method;
+                                    base-color: item.method == "GET" ? #dbeafe : item.method == "POST" ? #dcfce7 : item.method == "PUT" ? #fef3c7 : item.method == "DELETE" ? #fee2e2 : #e0e7ff;
+                                    text-color: item.method == "GET" ? #1e40af : item.method == "POST" ? #166534 : item.method == "PUT" ? #92400e : item.method == "DELETE" ? #991b1b : #3730a3;
+                                    y: (parent.height - self.height) / 2;
+                                }
+                                VerticalLayout {
+                                    alignment: center;
+                                    spacing: 2px;
+                                    Text { text: item.url; font-size: 12px; color: #374151; overflow: elide; }
+                                    HorizontalLayout {
+                                        spacing: 8px;
+                                        Text { text: item.timestamp; font-size: 11px; color: #9ca3af; }
+                                        if item.status-code > 0: Tag {
+                                            text: item.status-code;
+                                            base-color: item.status-code < 300 ? #dcfce7 : #fee2e2;
+                                            text-color: item.status-code < 300 ? #166534 : #991b1b;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if root.history.length == 0: VerticalLayout {
+                            alignment: center;
+                            padding-top: 32px;
+                            ClockIcon { width: 32px; height: 32px; colorize: #d1d5db; horizontal-alignment: center; }
+                            Text { text: "暂无历史记录"; font-size: 13px; color: #9ca3af; horizontal-alignment: center; }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

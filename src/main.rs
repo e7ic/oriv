@@ -418,6 +418,95 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     });
 
+    // API 测试器
+    let api_history_model = Rc::new(VecModel::default());
+    ui.set_api_history(api_history_model.clone().into());
+
+    // 发送 API 请求
+    ui.on_api_send_request({
+        let ui_handle = ui.as_weak();
+        move |method: SharedString, url: SharedString, headers: SharedString, body: SharedString| {
+            let ui_handle = ui_handle.clone();
+
+            if let Some(ui) = ui_handle.upgrade() {
+                ui.set_api_is_loading(true);
+                ui.set_api_response_body(SharedString::default());
+                ui.set_api_response_headers(SharedString::default());
+                ui.set_api_response_status(0);
+            }
+
+            let method_str = method.to_string();
+            let url_str = url.to_string();
+            let headers_str = headers.to_string();
+            let body_str = body.to_string();
+
+            tokio::spawn(async move {
+                let result = send_http_request(&method_str, &url_str, &headers_str, &body_str).await;
+                let method_str2 = method_str.clone();
+                let url_str2 = url_str.clone();
+
+                let _ = slint::invoke_from_event_loop(move || {
+                    if let Some(ui) = ui_handle.upgrade() {
+                        ui.set_api_is_loading(false);
+                        match result {
+                            Ok((status, resp_headers, resp_body)) => {
+                                ui.set_api_response_status(status as i32);
+                                ui.set_api_response_body(SharedString::from(&resp_body));
+                                ui.set_api_response_headers(SharedString::from(&resp_headers));
+
+                                let now = time::OffsetDateTime::now_utc();
+                                let timestamp = format!("{:02}:{:02}:{:02}", now.hour(), now.minute(), now.second());
+
+                                let history_model = ui.get_api_history();
+                                if let Some(vec_model) = history_model.as_any().downcast_ref::<VecModel<ApiHistoryItem>>() {
+                                    vec_model.insert(0, ApiHistoryItem {
+                                        id: SharedString::from(uuid::Uuid::new_v4().to_string()),
+                                        method: SharedString::from(&method_str2),
+                                        url: SharedString::from(&url_str2),
+                                        timestamp: SharedString::from(&timestamp),
+                                        status_code: status as i32,
+                                    });
+                                }
+                            }
+                            Err(e) => {
+                                ui.set_api_response_status(0);
+                                ui.set_api_response_body(SharedString::from(format!("请求失败: {}", e)));
+                            }
+                        }
+                    }
+                });
+            });
+        }
+    });
+
+    // 清空历史记录
+    let api_history_clone = api_history_model.clone();
+    ui.on_api_clear_history(move || {
+        while api_history_clone.row_count() > 0 {
+            api_history_clone.remove(0);
+        }
+    });
+
+    // 选择历史记录
+    ui.on_api_select_history({
+        let ui_handle = ui.as_weak();
+        let api_history = api_history_model.clone();
+        move |index: i32| {
+            if let Some(item) = api_history.row_data(index as usize) {
+                if let Some(ui) = ui_handle.upgrade() {
+                    ui.set_api_response_body(SharedString::default());
+                    ui.set_api_response_headers(SharedString::default());
+                    ui.set_api_response_status(0);
+                    // Note: request-method and request-url are in-out properties on ApiTester,
+                    // but we can't set them directly from here since they're internal to the component.
+                    // The user will need to re-enter the URL or we'd need to expose them on AppWindow.
+                    // For now, just log the selection.
+                    println!("Selected history item: {} {}", item.method, item.url);
+                }
+            }
+        }
+    });
+
     ui.on_show_error({
         let ui_handle = ui.as_weak();
         move |msg| {
@@ -700,4 +789,56 @@ fn load_hosts_entries(model: &Rc<VecModel<HostEntry>>) -> Result<(), Box<dyn Err
     }
 
     Ok(())
+}
+
+async fn send_http_request(
+    method: &str,
+    url: &str,
+    headers_json: &str,
+    body: &str,
+) -> Result<(u16, String, String), Box<dyn std::error::Error + Send + Sync>> {
+    let client = reqwest::Client::new();
+
+    let req_method = match method {
+        "GET" => reqwest::Method::GET,
+        "POST" => reqwest::Method::POST,
+        "PUT" => reqwest::Method::PUT,
+        "DELETE" => reqwest::Method::DELETE,
+        "PATCH" => reqwest::Method::PATCH,
+        _ => reqwest::Method::GET,
+    };
+
+    let mut builder = client.request(req_method.clone(), url);
+
+    // Parse and apply custom headers
+    if !headers_json.trim().is_empty() {
+        if let Ok(map) = serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(headers_json) {
+            for (key, value) in map {
+                if let Some(v) = value.as_str() {
+                    builder = builder.header(&key, v);
+                }
+            }
+        }
+    }
+
+    // Add body for non-GET methods
+    if req_method != reqwest::Method::GET && !body.is_empty() {
+        builder = builder.body(body.to_string());
+    }
+
+    let response = builder.send().await?;
+    let status = response.status().as_u16();
+
+    // Collect response headers
+    let mut header_lines = Vec::new();
+    for (name, value) in response.headers() {
+        if let Ok(v) = value.to_str() {
+            header_lines.push(format!("{}: {}", name, v));
+        }
+    }
+    let resp_headers = header_lines.join("\n");
+
+    let resp_body = response.text().await?;
+
+    Ok((status, resp_headers, resp_body))
 }

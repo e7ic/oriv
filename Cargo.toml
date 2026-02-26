@@ -23,6 +23,7 @@ dirs = "6.0"
 rfd = "0.15"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+reqwest = { version = "0.12", features = ["json"] }
 
 [package.metadata.bundle]
 name = "Ovo"
